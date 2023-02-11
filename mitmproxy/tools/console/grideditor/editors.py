@@ -149,16 +149,10 @@ class SetCookieEditor(base.FocusEditor):
     ]
 
     def data_in(self, data):
-        flattened = []
-        for key, (value, attrs) in data:
-            flattened.append([key, value, attrs.items(multi=True)])
-        return flattened
+        return [[key, value, attrs.items(multi=True)] for key, (value, attrs) in data]
 
     def data_out(self, data):
-        vals = []
-        for key, value, attrs in data:
-            vals.append([key, (value, attrs)])
-        return vals
+        return [[key, (value, attrs)] for key, value, attrs in data]
 
     def get_data(self, flow):
         return self.data_in(flow.response.cookies.items(multi=True))

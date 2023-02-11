@@ -27,20 +27,13 @@ def format_msgpack(
         token = [("Token_Literal_String", f'"{data}"')]
         output[-1] += token
 
-        # Need to return if single value, but return is discarded in dict/list loop
-        return output
-
     elif type(data) is float or type(data) is int:
         token = [("Token_Literal_Number", repr(data))]
         output[-1] += token
 
-        return output
-
     elif type(data) is bool:
         token = [("Token_Keyword_Constant", repr(data))]
         output[-1] += token
-
-        return output
 
     elif type(data) is dict:
         output[-1] += [("text", "{")]
@@ -60,8 +53,6 @@ def format_msgpack(
 
         output.append([indent, ("text", "}")])
 
-        return output
-
     elif type(data) is list:
         output[-1] += [("text", "[")]
 
@@ -73,13 +64,13 @@ def format_msgpack(
 
         output.append([indent, ("text", "]")])
 
-        return output
-
     else:
         token = [("text", repr(data))]
         output[-1] += token
 
-        return output
+
+    # Need to return if single value, but return is discarded in dict/list loop
+    return output
 
 
 class ViewMsgPack(base.View):

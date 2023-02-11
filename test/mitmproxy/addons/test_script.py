@@ -75,7 +75,7 @@ class TestScript:
             await caplog_async.await_log("recorder configure")
             rec = tctx.master.addons.get("recorder")
 
-            assert rec.call_log[0][0:2] == ("recorder", "load")
+            assert rec.call_log[0][:2] == ("recorder", "load")
 
             rec.call_log = []
             f = tflow.tflow(resp=True)
@@ -227,7 +227,7 @@ class TestScriptLoader:
     async def test_script_deletion(self, tdata, caplog_async):
         caplog_async.set_level("INFO")
         tdir = tdata.path("mitmproxy/data/addonscripts/")
-        with open(tdir + "/dummy.py", "w") as f:
+        with open(f"{tdir}/dummy.py", "w") as f:
             f.write("\n")
 
         with taddons.context() as tctx:
@@ -263,14 +263,7 @@ class TestScriptLoader:
         sc = script.ScriptLoader()
         sc.is_running = True
         with taddons.context(sc) as tctx:
-            tctx.configure(
-                sc,
-                scripts=[
-                    "%s/a.py" % rec,
-                    "%s/b.py" % rec,
-                    "%s/c.py" % rec,
-                ],
-            )
+            tctx.configure(sc, scripts=[f"{rec}/a.py", f"{rec}/b.py", f"{rec}/c.py"])
             await caplog_async.await_log("configure")
             debug = [
                 i.msg for i in caplog_async.caplog.records if i.levelname == "DEBUG"
@@ -288,14 +281,7 @@ class TestScriptLoader:
             ]
 
             caplog_async.clear()
-            tctx.configure(
-                sc,
-                scripts=[
-                    "%s/c.py" % rec,
-                    "%s/a.py" % rec,
-                    "%s/b.py" % rec,
-                ],
-            )
+            tctx.configure(sc, scripts=[f"{rec}/c.py", f"{rec}/a.py", f"{rec}/b.py"])
 
             await caplog_async.await_log("b configure")
             debug = [
@@ -308,13 +294,7 @@ class TestScriptLoader:
             ]
 
             caplog_async.clear()
-            tctx.configure(
-                sc,
-                scripts=[
-                    "%s/e.py" % rec,
-                    "%s/a.py" % rec,
-                ],
-            )
+            tctx.configure(sc, scripts=[f"{rec}/e.py", f"{rec}/a.py"])
             await caplog_async.await_log("e configure")
             debug = [
                 i.msg for i in caplog_async.caplog.records if i.levelname == "DEBUG"

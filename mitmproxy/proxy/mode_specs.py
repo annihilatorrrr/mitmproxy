@@ -111,7 +111,7 @@ class ProxyMode(Serializable, metaclass=ABCMeta):
                 port_str = listen_at
             try:
                 port = int(port_str)
-                if port < 0 or 65535 < port:
+                if port < 0 or port > 65535:
                     raise ValueError
             except ValueError:
                 raise ValueError(f"invalid port: {port_str}")
@@ -122,7 +122,7 @@ class ProxyMode(Serializable, metaclass=ABCMeta):
         try:
             mode_cls = ProxyMode.__types[mode.lower()]
         except KeyError:
-            raise ValueError(f"unknown mode")
+            raise ValueError("unknown mode")
 
         if not issubclass(mode_cls, cls):
             raise ValueError(f"{mode!r} is not a spec for a {cls.type_name} mode")
@@ -209,7 +209,7 @@ class UpstreamMode(ProxyMode):
     # noinspection PyDataclass
     def __post_init__(self) -> None:
         scheme, self.address = server_spec.parse(self.data, default_scheme="http")
-        if scheme != "http" and scheme != "https":
+        if scheme not in ["http", "https"]:
             raise ValueError("invalid upstream proxy scheme")
         self.scheme = scheme
 
@@ -233,9 +233,7 @@ class ReverseMode(ProxyMode):
 
     @property
     def default_port(self) -> int:
-        if self.scheme == "dns":
-            return 53
-        return super().default_port
+        return 53 if self.scheme == "dns" else super().default_port
 
 
 class Socks5Mode(ProxyMode):

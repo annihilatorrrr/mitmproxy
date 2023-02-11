@@ -20,9 +20,7 @@ def hello():
 
 @tapp.route("/parameters")
 def request_check():
-    args = {}
-    for k in request.args.keys():
-        args[k] = request.args[k]
+    args = {k: request.args[k] for k in request.args.keys()}
     return json.dumps(args)
 
 

@@ -28,13 +28,12 @@ class Core:
             raise exceptions.OptionsError(
                 "add_upstream_certs_to_client_chain requires the upstream_cert option to be enabled."
             )
-        if "client_certs" in updated:
-            if opts.client_certs:
-                client_certs = os.path.expanduser(opts.client_certs)
-                if not os.path.exists(client_certs):
-                    raise exceptions.OptionsError(
-                        f"Client certificate path does not exist: {opts.client_certs}"
-                    )
+        if "client_certs" in updated and opts.client_certs:
+            client_certs = os.path.expanduser(opts.client_certs)
+            if not os.path.exists(client_certs):
+                raise exceptions.OptionsError(
+                    f"Client certificate path does not exist: {opts.client_certs}"
+                )
 
     @command.command("set")
     def set(self, option: str, *value: str) -> None:
@@ -44,10 +43,7 @@ class Core:
         are emptied. Boolean values can be true, false or toggle.
         Multiple values are concatenated with a single space.
         """
-        if value:
-            specs = [f"{option}={v}" for v in value]
-        else:
-            specs = [option]
+        specs = [f"{option}={v}" for v in value] if value else [option]
         try:
             ctx.options.set(*specs)
         except exceptions.OptionsError as e:
@@ -71,7 +67,7 @@ class Core:
         """
         updated = []
         if marker not in emoji.emoji:
-            raise exceptions.CommandError(f"invalid marker value")
+            raise exceptions.CommandError("invalid marker value")
 
         for i in flows:
             i.marked = marker
@@ -85,10 +81,7 @@ class Core:
         Toggle mark for flows.
         """
         for i in flows:
-            if i.marked:
-                i.marked = ""
-            else:
-                i.marked = ":default:"
+            i.marked = "" if i.marked else ":default:"
         ctx.master.addons.trigger(hooks.UpdateHook(flows))
 
     @command.command("flow.kill")
@@ -101,7 +94,7 @@ class Core:
             if f.killable:
                 f.kill()
                 updated.append(f)
-        logger.log(ALERT, "Killed %s flows." % len(updated))
+        logger.log(ALERT, f"Killed {len(updated)} flows.")
         ctx.master.addons.trigger(hooks.UpdateHook(updated))
 
     # FIXME: this will become view.revert later
@@ -115,7 +108,7 @@ class Core:
             if f.modified():
                 f.revert()
                 updated.append(f)
-        logger.log(ALERT, "Reverted %s flows." % len(updated))
+        logger.log(ALERT, f"Reverted {len(updated)} flows.")
         ctx.master.addons.trigger(hooks.UpdateHook(updated))
 
     @command.command("flow.set.options")
@@ -140,15 +133,12 @@ class Core:
             try:
                 val = int(val)  # type: ignore
             except ValueError as v:
-                raise exceptions.CommandError(
-                    "Status code is not an integer: %s" % val
-                ) from v
+                raise exceptions.CommandError(f"Status code is not an integer: {val}") from v
 
         updated = []
+        rupdate = True
         for f in flows:
-            req = getattr(f, "request", None)
-            rupdate = True
-            if req:
+            if req := getattr(f, "request", None):
                 if attr == "method":
                     req.method = val
                 elif attr == "host":
@@ -190,13 +180,12 @@ class Core:
         """
         updated = []
         for f in flows:
-            p = getattr(f, part, None)
-            if p:
+            if p := getattr(f, part, None):
                 f.backup()
                 p.decode()
                 updated.append(f)
         ctx.master.addons.trigger(hooks.UpdateHook(updated))
-        logger.log(ALERT, "Decoded %s flows." % len(updated))
+        logger.log(ALERT, f"Decoded {len(updated)} flows.")
 
     @command.command("flow.encode.toggle")
     def encode_toggle(self, flows: Sequence[flow.Flow], part: str) -> None:
@@ -205,8 +194,7 @@ class Core:
         """
         updated = []
         for f in flows:
-            p = getattr(f, part, None)
-            if p:
+            if p := getattr(f, part, None):
                 f.backup()
                 current_enc = p.headers.get("content-encoding", "identity")
                 if current_enc == "identity":
@@ -215,7 +203,7 @@ class Core:
                     p.decode()
                 updated.append(f)
         ctx.master.addons.trigger(hooks.UpdateHook(updated))
-        logger.log(ALERT, "Toggled encoding on %s flows." % len(updated))
+        logger.log(ALERT, f"Toggled encoding on {len(updated)} flows.")
 
     @command.command("flow.encode")
     @command.argument("encoding", type=mitmproxy.types.Choice("flow.encode.options"))
@@ -230,15 +218,14 @@ class Core:
         """
         updated = []
         for f in flows:
-            p = getattr(f, part, None)
-            if p:
+            if p := getattr(f, part, None):
                 current_enc = p.headers.get("content-encoding", "identity")
                 if current_enc == "identity":
                     f.backup()
                     p.encode(encoding)
                     updated.append(f)
         ctx.master.addons.trigger(hooks.UpdateHook(updated))
-        logger.log(ALERT, "Encoded %s flows." % len(updated))
+        logger.log(ALERT, f"Encoded {len(updated)} flows.")
 
     @command.command("flow.encode.options")
     def encode_options(self) -> Sequence[str]:
@@ -255,7 +242,7 @@ class Core:
         try:
             optmanager.load_paths(ctx.options, path)
         except (OSError, exceptions.OptionsError) as e:
-            raise exceptions.CommandError("Could not load options - %s" % e) from e
+            raise exceptions.CommandError(f"Could not load options - {e}") from e
 
     @command.command("options.save")
     def options_save(self, path: mitmproxy.types.Path) -> None:
@@ -265,7 +252,7 @@ class Core:
         try:
             optmanager.save(ctx.options, path)
         except OSError as e:
-            raise exceptions.CommandError("Could not save options - %s" % e) from e
+            raise exceptions.CommandError(f"Could not save options - {e}") from e
 
     @command.command("options.reset")
     def options_reset(self) -> None:
@@ -280,7 +267,7 @@ class Core:
         Reset one option to its default value.
         """
         if name not in ctx.options:
-            raise exceptions.CommandError("No such option: %s" % name)
+            raise exceptions.CommandError(f"No such option: {name}")
         setattr(
             ctx.options,
             name,

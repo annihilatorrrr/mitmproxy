@@ -20,10 +20,12 @@ def check_src_files_have_test():
     src_files = glob.glob("mitmproxy/**/*.py", recursive=True)
     src_files = [f for f in src_files if os.path.basename(f) != "__init__.py"]
     src_files = [
-        f for f in src_files if not any(os.path.normpath(p) in f for p in excluded)
+        f
+        for f in src_files
+        if all(os.path.normpath(p) not in f for p in excluded)
     ]
     for f in src_files:
-        p = os.path.join("test", os.path.dirname(f), "test_" + os.path.basename(f))
+        p = os.path.join("test", os.path.dirname(f), f"test_{os.path.basename(f)}")
         if not os.path.isfile(p):
             missing_test_files.append((f, p))
 
@@ -42,7 +44,9 @@ def check_test_files_have_src():
     test_files = glob.glob("test/mitmproxy/**/*.py", recursive=True)
     test_files = [f for f in test_files if os.path.basename(f) != "__init__.py"]
     test_files = [
-        f for f in test_files if not any(os.path.normpath(p) in f for p in excluded)
+        f
+        for f in test_files
+        if all(os.path.normpath(p) not in f for p in excluded)
     ]
     for f in test_files:
         p = os.path.join(
@@ -58,14 +62,12 @@ def check_test_files_have_src():
 def main():
     exitcode = 0
 
-    missing_test_files = check_src_files_have_test()
-    if missing_test_files:
+    if missing_test_files := check_src_files_have_test():
         exitcode += 1
         for f, p in sorted(missing_test_files):
             print(f"{f} MUST have a matching test file: {p}")
 
-    unknown_test_files = check_test_files_have_src()
-    if unknown_test_files:
+    if unknown_test_files := check_test_files_have_src():
         # TODO: enable this in the future
         # exitcode += 1
         for f, p in sorted(unknown_test_files):

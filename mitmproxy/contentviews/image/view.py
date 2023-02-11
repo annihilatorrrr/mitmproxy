@@ -29,10 +29,7 @@ class ViewImage(base.View):
             image_metadata = image_parser.parse_ico(data)
         else:
             image_metadata = [("Image Format", image_type or "unknown")]
-        if image_type:
-            view_name = f"{image_type.upper()} Image"
-        else:
-            view_name = "Unknown Image"
+        view_name = f"{image_type.upper()} Image" if image_type else "Unknown Image"
         return view_name, base.format_dict(multidict.MultiDict(image_metadata))
 
     def render_priority(

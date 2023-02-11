@@ -107,13 +107,12 @@ class Http1Connection(HttpConnection, metaclass=abc.ABCMeta):
             if h11_event is None:
                 return
             elif isinstance(h11_event, h11.Data):
-                data: bytes = bytes(h11_event.data)
-                if data:
+                if data := bytes(h11_event.data):
                     yield ReceiveHttp(self.ReceiveData(self.stream_id, data))
             elif isinstance(h11_event, h11.EndOfMessage):
                 assert self.request
                 if h11_event.headers:
-                    raise NotImplementedError(f"HTTP trailers are not implemented yet.")
+                    raise NotImplementedError("HTTP trailers are not implemented yet.")
                 if self.request.data.method.upper() != b"CONNECT":
                     yield ReceiveHttp(self.ReceiveEndOfMessage(self.stream_id))
                 is_request = isinstance(self, Http1Server)
@@ -137,7 +136,7 @@ class Http1Connection(HttpConnection, metaclass=abc.ABCMeta):
             yield ReceiveHttp(
                 self.ReceiveProtocolError(
                     self.stream_id,
-                    f"Client disconnected.",
+                    "Client disconnected.",
                     code=status_codes.CLIENT_CLOSED_REQUEST,
                 )
             )
@@ -151,9 +150,7 @@ class Http1Connection(HttpConnection, metaclass=abc.ABCMeta):
         self.state = self.passthrough
         if self.buf:
             already_received = self.buf.maybe_extract_at_most(len(self.buf)) or b""
-            # Some clients send superfluous newlines after CONNECT, we want to eat those.
-            already_received = already_received.lstrip(b"\r\n")
-            if already_received:
+            if already_received := already_received.lstrip(b"\r\n"):
                 yield from self.state(events.DataReceived(self.conn, already_received))
 
     def passthrough(self, event: events.Event) -> layer.CommandGenerator[None]:
@@ -187,7 +184,7 @@ class Http1Connection(HttpConnection, metaclass=abc.ABCMeta):
                 # this may raise only now (and not earlier) because an addon set invalid headers,
                 # in which case it's not really clear what we are supposed to do.
                 read_until_eof_semantics = False
-            connection_done = (
+            if connection_done := (
                 read_until_eof_semantics
                 or http1.connection_close(
                     self.request.http_version, self.request.headers
@@ -202,8 +199,7 @@ class Http1Connection(HttpConnection, metaclass=abc.ABCMeta):
                     (self.request.is_http2 or self.request.is_http3)
                     and isinstance(self, Http1Client)
                 )
-            )
-            if connection_done:
+            ):
                 yield commands.CloseConnection(self.conn)
                 self.state = self.done
                 return
@@ -278,8 +274,7 @@ class Http1Server(Http1Connection):
         self, event: events.ConnectionEvent
     ) -> layer.CommandGenerator[None]:
         if isinstance(event, events.DataReceived):
-            request_head = self.buf.maybe_extract_lines()
-            if request_head:
+            if request_head := self.buf.maybe_extract_lines():
                 try:
                     self.request = http1.read_request_head(
                         [bytes(x) for x in request_head]
@@ -312,8 +307,6 @@ class Http1Server(Http1Connection):
                 self.body_reader = make_body_reader(expected_body_size)
                 self.state = self.read_body
                 yield from self.state(event)
-            else:
-                pass  # FIXME: protect against header size DoS
         elif isinstance(event, events.ConnectionClosed):
             buf = bytes(self.buf)
             if buf.strip():
@@ -401,8 +394,7 @@ class Http1Client(Http1Connection):
                 return
             assert self.stream_id is not None
 
-            response_head = self.buf.maybe_extract_lines()
-            if response_head:
+            if response_head := self.buf.maybe_extract_lines():
                 try:
                     self.response = http1.read_response_head(
                         [bytes(x) for x in response_head]
@@ -427,30 +419,27 @@ class Http1Client(Http1Connection):
 
                 self.state = self.read_body
                 yield from self.state(event)
-            else:
-                pass  # FIXME: protect against header size DoS
         elif isinstance(event, events.ConnectionClosed):
             if self.conn.state & ConnectionState.CAN_WRITE:
                 yield commands.CloseConnection(self.conn)
-            if self.stream_id:
-                if self.buf:
-                    yield ReceiveHttp(
-                        ResponseProtocolError(
-                            self.stream_id,
-                            f"unexpected server response: {bytes(self.buf)!r}",
-                        )
-                    )
-                else:
-                    # The server has closed the connection to prevent us from continuing.
-                    # We need to signal that to the stream.
-                    # https://tools.ietf.org/html/rfc7231#section-6.5.11
-                    yield ReceiveHttp(
-                        ResponseProtocolError(
-                            self.stream_id, "server closed connection"
-                        )
-                    )
-            else:
+            if not self.stream_id:
                 return
+            if self.buf:
+                yield ReceiveHttp(
+                    ResponseProtocolError(
+                        self.stream_id,
+                        f"unexpected server response: {bytes(self.buf)!r}",
+                    )
+                )
+            else:
+                # The server has closed the connection to prevent us from continuing.
+                # We need to signal that to the stream.
+                # https://tools.ietf.org/html/rfc7231#section-6.5.11
+                yield ReceiveHttp(
+                    ResponseProtocolError(
+                        self.stream_id, "server closed connection"
+                    )
+                )
         else:
             raise AssertionError(f"Unexpected event: {event}")
 

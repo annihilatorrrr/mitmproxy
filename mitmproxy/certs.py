@@ -82,7 +82,7 @@ class Cert(serializable.Serializable):
         return self._cert.public_bytes(serialization.Encoding.PEM)
 
     @classmethod
-    def from_pyopenssl(self, x509: OpenSSL.crypto.X509) -> "Cert":
+    def from_pyopenssl(cls, x509: OpenSSL.crypto.X509) -> "Cert":
         return Cert(x509.to_cryptography())
 
     def to_pyopenssl(self) -> OpenSSL.crypto.X509:
@@ -132,17 +132,17 @@ class Cert(serializable.Serializable):
 
     @property
     def cn(self) -> Optional[str]:
-        attrs = self._cert.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)
-        if attrs:
+        if attrs := self._cert.subject.get_attributes_for_oid(
+            x509.NameOID.COMMON_NAME
+        ):
             return attrs[0].value
         return None
 
     @property
     def organization(self) -> Optional[str]:
-        attrs = self._cert.subject.get_attributes_for_oid(
+        if attrs := self._cert.subject.get_attributes_for_oid(
             x509.NameOID.ORGANIZATION_NAME
-        )
-        if attrs:
+        ):
             return attrs[0].value
         return None
 
@@ -386,10 +386,7 @@ class CertStore:
         dh = cls.load_dhparam(dhparam_file)
         certs = re.split(rb"(?=-----BEGIN CERTIFICATE-----)", raw)
         ca = Cert.from_pem(certs[1])
-        if len(certs) > 2:
-            chain_file: Optional[Path] = ca_file
-        else:
-            chain_file = None
+        chain_file = ca_file if len(certs) > 2 else None
         return cls(key, ca, chain_file, dh)
 
     @staticmethod
@@ -494,8 +491,7 @@ class CertStore:
         """
         parts = dn.split(".")
         ret = [dn]
-        for i in range(1, len(parts)):
-            ret.append("*." + ".".join(parts[i:]))
+        ret.extend("*." + ".".join(parts[i:]) for i in range(1, len(parts)))
         return ret
 
     def get_cert(
@@ -518,11 +514,10 @@ class CertStore:
             potential_keys.extend(self.asterisk_forms(commonname))
         for s in sans:
             potential_keys.extend(self.asterisk_forms(s))
-        potential_keys.append("*")
-        potential_keys.append((commonname, tuple(sans)))
-
-        name = next(filter(lambda key: key in self.certs, potential_keys), None)
-        if name:
+        potential_keys.extend(("*", (commonname, tuple(sans))))
+        if name := next(
+            filter(lambda key: key in self.certs, potential_keys), None
+        ):
             entry = self.certs[name]
         else:
             entry = CertStoreEntry(

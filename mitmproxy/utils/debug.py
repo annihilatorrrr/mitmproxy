@@ -119,7 +119,7 @@ def dump_stacks(signal=None, frame=None, file=sys.stdout):
         for filename, lineno, name, line in traceback.extract_stack(stack):
             code.append('File: "%s", line %d, in %s' % (filename, lineno, name))
             if line:
-                code.append("  %s" % (line.strip()))
+                code.append(f"  {line.strip()}")
     print("\n".join(code), file=file)
     if os.getenv("MITMPROXY_DEBUG_EXIT"):  # pragma: no cover
         sys.exit(1)

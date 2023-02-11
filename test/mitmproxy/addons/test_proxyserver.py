@@ -395,9 +395,7 @@ class H3EchoServer(QuicConnectionProtocol):
 
     def http_headers_received(self, event: h3_events.HeadersReceived) -> None:
         assert event.push_id is None
-        headers: dict[bytes, bytes] = {}
-        for name, value in event.headers:
-            headers[name] = value
+        headers: dict[bytes, bytes] = dict(event.headers)
         response = []
         if event.stream_id not in self._seen_headers:
             self._seen_headers.add(event.stream_id)
@@ -553,7 +551,7 @@ class H3Response:
 class H3Client(QuicClient):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self._responses: dict[int, H3Response] = dict()
+        self._responses: dict[int, H3Response] = {}
         self.http = H3Connection(self._quic)
 
     def http_headers_received(self, event: h3_events.HeadersReceived) -> None:
@@ -793,7 +791,7 @@ async def test_reverse_http3_and_quic_stream(
                 assert len(ps.connections) == 1
 
             tctx.configure(ps, server=False)
-            await caplog_async.await_log(f"stopped")
+            await caplog_async.await_log("stopped")
 
 
 @pytest.mark.parametrize("connection_strategy", ["lazy", "eager"])
@@ -851,7 +849,7 @@ async def test_regular_http3(caplog_async, monkeypatch) -> None:
                 return orig_open_connection(host, port, *args, **kwargs)
 
             monkeypatch.setattr(udp, "open_connection", open_connection_path)
-            mode = f"http3@127.0.0.1:0"
+            mode = "http3@127.0.0.1:0"
             tctx.configure(
                 ta,
                 ssl_verify_upstream_trusted_ca=tlsdata.path(
@@ -861,7 +859,7 @@ async def test_regular_http3(caplog_async, monkeypatch) -> None:
             tctx.configure(ps, mode=[mode])
             assert await ps.setup_servers()
             ps.running()
-            await caplog_async.await_log(f"HTTP3 proxy listening")
+            await caplog_async.await_log("HTTP3 proxy listening")
             assert ps.servers
             addr = ps.servers[mode].listen_addrs[0]
             async with quic_connect(H3Client, alpn=["h3"], address=addr) as client:

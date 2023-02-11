@@ -121,24 +121,15 @@ def check():
     for option in ("--nonanonymous", "--singleuser", "--htpasswd"):
         if option in args:
             print(
-                "{} is deprecated.\n"
-                "Please use `--proxyauth SPEC` instead.\n"
-                'SPEC Format: "username:pass", "any" to accept any user/pass combination,\n'
-                '"@path" to use an Apache htpasswd file, or\n'
-                '"ldap[s]:url_server_ldap:dn_auth:password:dn_subtree" '
-                "for LDAP authentication.".format(option)
+                f'{option} is deprecated.\nPlease use `--proxyauth SPEC` instead.\nSPEC Format: "username:pass", "any" to accept any user/pass combination,\n"@path" to use an Apache htpasswd file, or\n"ldap[s]:url_server_ldap:dn_auth:password:dn_subtree" for LDAP authentication.'
             )
 
     for option in REPLACED.splitlines():
         if option in args:
             r = REPLACEMENTS.get(option)
-            if isinstance(r, list):
-                new_options = r
-            else:
-                new_options = [r]
+            new_options = r if isinstance(r, list) else [r]
             print(
-                "{} is deprecated.\n"
-                "Please use `{}` instead.".format(option, "` or `".join(new_options))
+                f'{option} is deprecated.\nPlease use `{"` or `".join(new_options)}` instead.'
             )
 
     for option in DEPRECATED.splitlines():
@@ -158,7 +149,5 @@ def check():
         underscoreParam = re.search(r"[-]{2}((.*?_)(.*?(\s|$)))+", argument)
         if underscoreParam is not None:
             print(
-                "{} uses underscores, please use hyphens {}".format(
-                    argument, argument.replace("_", "-")
-                )
+                f'{argument} uses underscores, please use hyphens {argument.replace("_", "-")}'
             )

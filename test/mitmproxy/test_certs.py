@@ -78,7 +78,7 @@ class TestCertStore:
         tstore.get_cert("foo.bar.com", [])
         # assert c1 == c2
         c3 = tstore.get_cert("bar.com", [])
-        assert not c1 == c3
+        assert c1 != c3
 
     def test_sans_change(self, tstore):
         tstore.get_cert("foo.com", ["*.bar.com"])
@@ -111,7 +111,7 @@ class TestCertStore:
     def test_overrides(self, tmp_path):
         ca1 = certs.CertStore.from_store(tmp_path / "ca1", "test", 2048)
         ca2 = certs.CertStore.from_store(tmp_path / "ca2", "test", 2048)
-        assert not ca1.default_ca.serial == ca2.default_ca.serial
+        assert ca1.default_ca.serial != ca2.default_ca.serial
 
         dc = ca2.get_cert("foo.com", ["sans.example.com"])
         dcp = tmp_path / "dc"

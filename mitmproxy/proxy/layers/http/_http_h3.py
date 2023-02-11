@@ -201,30 +201,25 @@ class LayeredH3Connection(H3Connection):
         if self._is_done:
             return []
 
-        # treat reset events similar to data events with end_stream=True
-        # We can receive multiple reset events as long as the final size does not change.
         elif isinstance(event, QuicStreamReset):
             stream = self._get_or_create_stream(event.stream_id)
             stream.ended = True
             stream.headers_recv_state = HeadersState.AFTER_TRAILERS
             return [StreamReset(event.stream_id, event.error_code, stream.push_id)]
 
-        # convert data events from the QUIC layer back to aioquic events
         elif isinstance(event, QuicStreamDataReceived):
-            if self._get_or_create_stream(event.stream_id).ended:
-                # aioquic will not send us any data events once a stream has ended.
-                # Instead, it will close the connection. We simulate this here for H3 tests.
-                self.close_connection(
-                    error_code=QuicErrorCode.PROTOCOL_VIOLATION,
-                    reason_phrase="stream already ended",
-                )
-                return []
-            else:
+            if not self._get_or_create_stream(event.stream_id).ended:
                 return self.handle_event(
                     StreamDataReceived(event.data, event.end_stream, event.stream_id)
                 )
 
-        # should never happen
+            # aioquic will not send us any data events once a stream has ended.
+            # Instead, it will close the connection. We simulate this here for H3 tests.
+            self.close_connection(
+                error_code=QuicErrorCode.PROTOCOL_VIOLATION,
+                reason_phrase="stream already ended",
+            )
+            return []
         else:  # pragma: no cover
             raise AssertionError(f"Unexpected event: {event!r}")
 

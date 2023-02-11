@@ -11,7 +11,7 @@ Cache = dict[int, Optional[tuple[str, int]]]
 
 
 def cache() -> Cache:
-    return dict()
+    return {}
 
 
 def _unpack_label_into(labels: list[str], buffer: bytes, offset: int) -> int:
@@ -40,7 +40,7 @@ def unpack_from_with_compression(
     if offset in cache:
         result = cache[offset]
         if result is None:
-            raise struct.error(f"unpack encountered domain name loop")
+            raise struct.error("unpack encountered domain name loop")
     else:
         cache[offset] = None  # this will indicate that the offset is being unpacked
         start_offset = offset
@@ -71,12 +71,11 @@ def unpack_from(buffer: bytes, offset: int) -> tuple[str, int]:
         (size,) = _LABEL_SIZE.unpack_from(buffer, offset)
         if size & _POINTER_INDICATOR == _POINTER_INDICATOR:
             raise struct.error(
-                f"unpack encountered a pointer which is not supported in RDATA"
+                "unpack encountered a pointer which is not supported in RDATA"
             )
-        else:
-            offset += _unpack_label_into(labels, buffer, offset)
-            if size == 0:
-                break
+        offset += _unpack_label_into(labels, buffer, offset)
+        if size == 0:
+            break
     return ".".join(labels), offset
 
 
@@ -91,7 +90,7 @@ def unpack(buffer: bytes) -> str:
 def pack(name: str) -> bytes:
     """Converts a domain name into RDATA without pointer compression."""
     buffer = bytearray()
-    if len(name) > 0:
+    if name != "":
         for part in name.split("."):
             label = part.encode("idna")
             size = len(label)

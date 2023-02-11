@@ -116,7 +116,7 @@ class HttpsDomainFronting:
             self._load_configuration_file(domain_fronting_file)
 
     def request(self, flow: HTTPFlow) -> None:
-        if not flow.request.scheme == "https":
+        if flow.request.scheme != "https":
             return
         # We use the host header to dispatch the request:
         target = flow.request.host_header

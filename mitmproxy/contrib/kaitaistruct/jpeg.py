@@ -6,7 +6,9 @@ from enum import Enum
 
 
 if getattr(kaitaistruct, 'API_VERSION', (0, 9)) < (0, 9):
-    raise Exception("Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have %s" % (kaitaistruct.__version__))
+    raise Exception(
+        f"Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have {kaitaistruct.__version__}"
+    )
 
 from . import exif
 class Jpeg(KaitaiStruct):
@@ -37,7 +39,7 @@ class Jpeg(KaitaiStruct):
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
         self._parent = _parent
-        self._root = _root if _root else self
+        self._root = _root or self
         self._read()
 
     def _read(self):
@@ -87,18 +89,24 @@ class Jpeg(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
             self.magic = self._io.read_bytes(1)
-            if not self.magic == b"\xFF":
+            if self.magic != b"\xFF":
                 raise kaitaistruct.ValidationNotEqualError(b"\xFF", self.magic, self._io, u"/types/segment/seq/0")
             self.marker = KaitaiStream.resolve_enum(Jpeg.Segment.MarkerEnum, self._io.read_u1())
-            if  ((self.marker != Jpeg.Segment.MarkerEnum.soi) and (self.marker != Jpeg.Segment.MarkerEnum.eoi)) :
+            if self.marker not in [
+                Jpeg.Segment.MarkerEnum.soi,
+                Jpeg.Segment.MarkerEnum.eoi,
+            ]:
                 self.length = self._io.read_u2be()
 
-            if  ((self.marker != Jpeg.Segment.MarkerEnum.soi) and (self.marker != Jpeg.Segment.MarkerEnum.eoi)) :
+            if self.marker not in [
+                Jpeg.Segment.MarkerEnum.soi,
+                Jpeg.Segment.MarkerEnum.eoi,
+            ]:
                 _on = self.marker
                 if _on == Jpeg.Segment.MarkerEnum.app1:
                     self._raw_data = self._io.read_bytes((self.length - 2))
@@ -128,15 +136,16 @@ class Jpeg(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
             self.num_components = self._io.read_u1()
             self.components = []
-            for i in range(self.num_components):
-                self.components.append(Jpeg.SegmentSos.Component(self._io, self, self._root))
-
+            self.components.extend(
+                Jpeg.SegmentSos.Component(self._io, self, self._root)
+                for _ in range(self.num_components)
+            )
             self.start_spectral_selection = self._io.read_u1()
             self.end_spectral = self._io.read_u1()
             self.appr_bit_pos = self._io.read_u1()
@@ -145,7 +154,7 @@ class Jpeg(KaitaiStruct):
             def __init__(self, _io, _parent=None, _root=None):
                 self._io = _io
                 self._parent = _parent
-                self._root = _root if _root else self
+                self._root = _root or self
                 self._read()
 
             def _read(self):
@@ -158,7 +167,7 @@ class Jpeg(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -172,7 +181,7 @@ class Jpeg(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -181,15 +190,17 @@ class Jpeg(KaitaiStruct):
             self.image_width = self._io.read_u2be()
             self.num_components = self._io.read_u1()
             self.components = []
-            for i in range(self.num_components):
-                self.components.append(Jpeg.SegmentSof0.Component(self._io, self, self._root))
+            self.components.extend(
+                Jpeg.SegmentSof0.Component(self._io, self, self._root)
+                for _ in range(self.num_components)
+            )
 
 
         class Component(KaitaiStruct):
             def __init__(self, _io, _parent=None, _root=None):
                 self._io = _io
                 self._parent = _parent
-                self._root = _root if _root else self
+                self._root = _root or self
                 self._read()
 
             def _read(self):
@@ -219,12 +230,12 @@ class Jpeg(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
             self.extra_zero = self._io.read_bytes(1)
-            if not self.extra_zero == b"\x00":
+            if self.extra_zero != b"\x00":
                 raise kaitaistruct.ValidationNotEqualError(b"\x00", self.extra_zero, self._io, u"/types/exif_in_jpeg/seq/0")
             self._raw_data = self._io.read_bytes_full()
             _io__raw_data = KaitaiStream(BytesIO(self._raw_data))
@@ -240,7 +251,7 @@ class Jpeg(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):

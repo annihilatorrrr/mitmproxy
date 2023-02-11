@@ -105,7 +105,7 @@ class NTLMUpstreamAuth:
         def extract_proxy_authenticate_msg(response_head: list) -> str:
             for header in response_head:
                 if b"Proxy-Authenticate" in header:
-                    challenge_message = str(bytes(header).decode("utf-8"))
+                    challenge_message = bytes(header).decode("utf-8")
                     try:
                         token = challenge_message.split(": ")[1]
                     except IndexError:
@@ -196,7 +196,7 @@ class CustomNTLMContext:
         return negotiate_message_base_64_final
 
     def get_ntlm_challenge_response_message(self, challenge_message: str) -> Any:
-        challenge_message = challenge_message.replace(self.preferred_type + " ", "", 1)
+        challenge_message = challenge_message.replace(f"{self.preferred_type} ", "", 1)
         try:
             challenge_message_ascii_bytes = base64.b64decode(
                 challenge_message, validate=True
@@ -207,9 +207,7 @@ class CustomNTLMContext:
             )
             return False
         authenticate_message = self.ntlm_context.step(challenge_message_ascii_bytes)
-        negotiate_message_base_64 = "{} {}".format(
-            self.preferred_type, base64.b64encode(authenticate_message).decode("ascii")
-        )
+        negotiate_message_base_64 = f'{self.preferred_type} {base64.b64encode(authenticate_message).decode("ascii")}'
         logging.debug(
             f"{self.preferred_type} Authentication, response to challenge message: {negotiate_message_base_64}"
         )

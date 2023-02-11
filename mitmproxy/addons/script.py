@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 
 
 def load_script(path: str) -> Optional[types.ModuleType]:
-    fullname = "__mitmproxy_script__.{}".format(
-        os.path.splitext(os.path.basename(path))[0]
+    fullname = (
+        f"__mitmproxy_script__.{os.path.splitext(os.path.basename(path))[0]}"
     )
     # the fullname is not unique among scripts, so if there already is an existing script with said
     # fullname, remove it.
@@ -66,9 +66,7 @@ def script_error_handler(path, exc, msg="", tb=False):
     exception = type(exc).__name__
     if msg:
         exception = msg
-    lineno = ""
-    if hasattr(exc, "lineno"):
-        lineno = str(exc.lineno)
+    lineno = str(exc.lineno) if hasattr(exc, "lineno") else ""
     log_msg = f"in script {path}:{lineno} {exception}"
     if tb:
         etype, value, tback = sys.exc_info()
@@ -88,7 +86,7 @@ class Script:
     """
 
     def __init__(self, path: str, reload: bool) -> None:
-        self.name = "scriptmanager:" + path
+        self.name = f"scriptmanager:{path}"
         self.path = path
         self.fullpath = os.path.expanduser(path.strip("'\" "))
         self.ns: types.ModuleType | None = None
@@ -118,7 +116,7 @@ class Script:
         return [self.ns] if self.ns else []
 
     def loadscript(self):
-        logger.info("Loading script %s" % self.path)
+        logger.info(f"Loading script {self.path}")
         if self.ns:
             ctx.master.addons.remove(self.ns)
         self.ns = None
@@ -143,7 +141,7 @@ class Script:
             try:
                 mtime = os.stat(self.fullpath).st_mtime
             except FileNotFoundError:
-                logger.info("Removing script %s" % self.path)
+                logger.info(f"Removing script {self.path}")
                 scripts = list(ctx.options.scripts)
                 scripts.remove(self.path)
                 ctx.options.update(scripts=scripts)
@@ -177,10 +175,9 @@ class ScriptLoader:
         simulated. Note that the load event is not invoked.
         """
         if not os.path.isfile(path):
-            logger.error("No such script: %s" % path)
+            logger.error(f"No such script: {path}")
             return
-        mod = load_script(path)
-        if mod:
+        if mod := load_script(path):
             with addonmanager.safecall():
                 ctx.master.addons.invoke_addon_sync(
                     mod,
@@ -192,42 +189,34 @@ class ScriptLoader:
                         ctx.master.addons.invoke_addon_sync(mod, evt)
 
     def configure(self, updated):
-        if "scripts" in updated:
-            for s in ctx.options.scripts:
-                if ctx.options.scripts.count(s) > 1:
-                    raise exceptions.OptionsError("Duplicate script")
+        if "scripts" not in updated:
+            return
+        for s in ctx.options.scripts:
+            if ctx.options.scripts.count(s) > 1:
+                raise exceptions.OptionsError("Duplicate script")
 
-            for a in self.addons[:]:
-                if a.path not in ctx.options.scripts:
-                    logger.info("Un-loading script: %s" % a.path)
-                    ctx.master.addons.remove(a)
-                    self.addons.remove(a)
+        for a in self.addons[:]:
+            if a.path not in ctx.options.scripts:
+                logger.info(f"Un-loading script: {a.path}")
+                ctx.master.addons.remove(a)
+                self.addons.remove(a)
 
-            # The machinations below are to ensure that:
-            #   - Scripts remain in the same order
-            #   - Scripts are not initialized un-necessarily. If only a
-            #   script's order in the script list has changed, it is just
-            #   moved.
+        current = {a.path: a for a in self.addons}
+        ordered = []
+        newscripts = []
+        for s in ctx.options.scripts:
+            if s in current:
+                ordered.append(current[s])
+            else:
+                sc = Script(s, True)
+                ordered.append(sc)
+                newscripts.append(sc)
 
-            current = {}
-            for a in self.addons:
-                current[a.path] = a
+        self.addons = ordered
 
-            ordered = []
-            newscripts = []
-            for s in ctx.options.scripts:
-                if s in current:
-                    ordered.append(current[s])
-                else:
-                    sc = Script(s, True)
-                    ordered.append(sc)
-                    newscripts.append(sc)
-
-            self.addons = ordered
-
-            for s in newscripts:
-                ctx.master.addons.register(s)
-                if self.is_running:
-                    # If we're already running, we configure and tell the addon
-                    # we're up and running.
-                    ctx.master.addons.invoke_addon_sync(s, hooks.RunningHook())
+        for s in newscripts:
+            ctx.master.addons.register(s)
+            if self.is_running:
+                # If we're already running, we configure and tell the addon
+                # we're up and running.
+                ctx.master.addons.invoke_addon_sync(s, hooks.RunningHook())

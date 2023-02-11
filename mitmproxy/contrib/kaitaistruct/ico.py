@@ -5,7 +5,9 @@ from kaitaistruct import KaitaiStruct, KaitaiStream, BytesIO
 
 
 if getattr(kaitaistruct, 'API_VERSION', (0, 9)) < (0, 9):
-    raise Exception("Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have %s" % (kaitaistruct.__version__))
+    raise Exception(
+        f"Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have {kaitaistruct.__version__}"
+    )
 
 class Ico(KaitaiStruct):
     """Microsoft Windows uses specific file format to store applications
@@ -19,24 +21,26 @@ class Ico(KaitaiStruct):
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
         self._parent = _parent
-        self._root = _root if _root else self
+        self._root = _root or self
         self._read()
 
     def _read(self):
         self.magic = self._io.read_bytes(4)
-        if not self.magic == b"\x00\x00\x01\x00":
+        if self.magic != b"\x00\x00\x01\x00":
             raise kaitaistruct.ValidationNotEqualError(b"\x00\x00\x01\x00", self.magic, self._io, u"/seq/0")
         self.num_images = self._io.read_u2le()
         self.images = []
-        for i in range(self.num_images):
-            self.images.append(Ico.IconDirEntry(self._io, self, self._root))
+        self.images.extend(
+            Ico.IconDirEntry(self._io, self, self._root)
+            for _ in range(self.num_images)
+        )
 
 
     class IconDirEntry(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -44,7 +48,7 @@ class Ico(KaitaiStruct):
             self.height = self._io.read_u1()
             self.num_colors = self._io.read_u1()
             self.reserved = self._io.read_bytes(1)
-            if not self.reserved == b"\x00":
+            if self.reserved != b"\x00":
                 raise kaitaistruct.ValidationNotEqualError(b"\x00", self.reserved, self._io, u"/types/icon_dir_entry/seq/3")
             self.num_planes = self._io.read_u2le()
             self.bpp = self._io.read_u2le()

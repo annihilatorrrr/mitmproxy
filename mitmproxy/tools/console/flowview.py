@@ -71,8 +71,7 @@ class FlowDetails(tabs.Tabs):
             self.show()
 
     def focus_changed(self):
-        f = self.flow
-        if f:
+        if f := self.flow:
             if isinstance(f, http.HTTPFlow):
                 if f.websocket:
                     self.tabs = [
@@ -183,13 +182,12 @@ class FlowDetails(tabs.Tabs):
                     " ",
                     ("heading", "["),
                     ("heading_key", "m"),
-                    ("heading", (":%s]" % viewmode)),
+                    ("heading", f":{viewmode}]"),
                 ],
                 align="right",
             ),
         ]
-        contentview_status_bar = urwid.AttrWrap(urwid.Columns(cols), "heading")
-        return contentview_status_bar
+        return urwid.AttrWrap(urwid.Columns(cols), "heading")
 
     FROM_CLIENT_MARKER = ("from_client", f"{common.SYMBOL_FROM_CLIENT} ")
     TO_CLIENT_MARKER = ("to_client", f"{common.SYMBOL_TO_CLIENT} ")
@@ -376,7 +374,7 @@ class FlowDetails(tabs.Tabs):
                 # 1) https://github.com/mitmproxy/mitmproxy/issues/1833
                 #    https://github.com/urwid/urwid/blob/6608ee2c9932d264abd1171468d833b7a4082e13/urwid/display_common.py#L35-L36,
 
-                k = strutils.bytes_to_escaped_str(k) + ":"
+                k = f"{strutils.bytes_to_escaped_str(k)}:"
                 v = strutils.bytes_to_escaped_str(v)
                 hdrs.append((k, v))
             txt = common.format_keyvals(hdrs, key_format="header")
@@ -394,7 +392,7 @@ class FlowDetails(tabs.Tabs):
                         " ",
                         ("heading", "["),
                         ("heading_key", "m"),
-                        ("heading", (":%s]" % viewmode)),
+                        ("heading", f":{viewmode}]"),
                     ],
                     align="right",
                 ),
@@ -420,48 +418,46 @@ class FlowDetails(tabs.Tabs):
         self, type: str, message: Optional[dns.Message]
     ) -> searchable.Searchable:
         # Keep in sync with web/src/js/components/FlowView/DnsMessages.tsx
-        if message:
-
-            def rr_text(rr: dns.ResourceRecord):
-                return urwid.Text(
-                    f"  {rr.name} {dns.types.to_str(rr.type)} {dns.classes.to_str(rr.class_)} {rr.ttl} {str(rr)}"
-                )
-
-            txt = []
-            txt.append(
-                urwid.Text(
-                    "{recursive}Question".format(
-                        recursive="Recursive " if message.recursion_desired else "",
-                    )
-                )
-            )
-            txt.extend(
-                urwid.Text(
-                    f"  {q.name} {dns.types.to_str(q.type)} {dns.classes.to_str(q.class_)}"
-                )
-                for q in message.questions
-            )
-            txt.append(urwid.Text(""))
-            txt.append(
-                urwid.Text(
-                    "{authoritative}{recursive}Answer".format(
-                        authoritative="Authoritative "
-                        if message.authoritative_answer
-                        else "",
-                        recursive="Recursive " if message.recursion_available else "",
-                    )
-                )
-            )
-            txt.extend(map(rr_text, message.answers))
-            txt.append(urwid.Text(""))
-            txt.append(urwid.Text("Authority"))
-            txt.extend(map(rr_text, message.authorities))
-            txt.append(urwid.Text(""))
-            txt.append(urwid.Text("Addition"))
-            txt.extend(map(rr_text, message.additionals))
-            return searchable.Searchable(txt)
-        else:
+        if not message:
             return searchable.Searchable([urwid.Text(("highlight", f"No {type}."))])
+        def rr_text(rr: dns.ResourceRecord):
+            return urwid.Text(
+                f"  {rr.name} {dns.types.to_str(rr.type)} {dns.classes.to_str(rr.class_)} {rr.ttl} {str(rr)}"
+            )
+
+        txt = []
+        txt.append(
+            urwid.Text(
+                "{recursive}Question".format(
+                    recursive="Recursive " if message.recursion_desired else "",
+                )
+            )
+        )
+        txt.extend(
+            urwid.Text(
+                f"  {q.name} {dns.types.to_str(q.type)} {dns.classes.to_str(q.class_)}"
+            )
+            for q in message.questions
+        )
+        txt.append(urwid.Text(""))
+        txt.append(
+            urwid.Text(
+                "{authoritative}{recursive}Answer".format(
+                    authoritative="Authoritative "
+                    if message.authoritative_answer
+                    else "",
+                    recursive="Recursive " if message.recursion_available else "",
+                )
+            )
+        )
+        txt.extend(map(rr_text, message.answers))
+        txt.append(urwid.Text(""))
+        txt.append(urwid.Text("Authority"))
+        txt.extend(map(rr_text, message.authorities))
+        txt.append(urwid.Text(""))
+        txt.append(urwid.Text("Addition"))
+        txt.extend(map(rr_text, message.additionals))
+        return searchable.Searchable(txt)
 
 
 class FlowView(urwid.Frame, layoutwidget.LayoutWidget):

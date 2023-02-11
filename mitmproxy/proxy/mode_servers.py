@@ -136,7 +136,6 @@ class ServerInstance(Generic[M], metaclass=ABCMeta):
             logger.info(f"{self.mode.description} started.")
 
     async def stop(self) -> None:
-        listen_addrs = self.listen_addrs
         try:
             await self._stop()
         except Exception as e:
@@ -144,7 +143,7 @@ class ServerInstance(Generic[M], metaclass=ABCMeta):
             raise
         else:
             self.last_exception = None
-        if listen_addrs:
+        if listen_addrs := self.listen_addrs:
             addrs = " and ".join({human.format_address(a) for a in listen_addrs})
             logger.info(f"{self.mode.description} at {addrs} stopped.")
         else:
@@ -333,10 +332,7 @@ class WireGuardServerInstance(ServerInstance[mode_specs.WireGuardMode]):
 
     @property
     def listen_addrs(self) -> tuple[Address, ...]:
-        if self._server:
-            return (self._server.getsockname(),)
-        else:
-            return tuple()
+        return (self._server.getsockname(), ) if self._server else tuple()
 
     async def _start(self) -> None:
         assert self._server is None

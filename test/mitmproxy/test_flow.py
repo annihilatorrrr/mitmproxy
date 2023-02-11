@@ -156,7 +156,7 @@ class TestError:
         assert e.copy()
 
         e2 = flow.Error("bar")
-        assert not e == e2
+        assert e != e2
         e.set_state(e2.get_state())
         assert e.get_state() == e2.get_state()
 

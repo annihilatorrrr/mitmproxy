@@ -69,10 +69,9 @@ class TunnelLayer(layer.Layer):
             if isinstance(event, events.DataReceived):
                 if self.tunnel_state is TunnelState.ESTABLISHING:
                     done, err = yield from self.receive_handshake_data(event.data)
-                    if done:
-                        if self.conn != self.tunnel_connection:
-                            self.conn.state = connection.ConnectionState.OPEN
-                            self.conn.timestamp_start = time.time()
+                    if done and self.conn != self.tunnel_connection:
+                        self.conn.state = connection.ConnectionState.OPEN
+                        self.conn.timestamp_start = time.time()
                     if err:
                         if self.conn != self.tunnel_connection:
                             self.conn.state = connection.ConnectionState.CLOSED
@@ -99,10 +98,7 @@ class TunnelLayer(layer.Layer):
             yield from self.event_to_child(event)
 
     def _handshake_finished(self, err: Optional[str]):
-        if err:
-            self.tunnel_state = TunnelState.CLOSED
-        else:
-            self.tunnel_state = TunnelState.OPEN
+        self.tunnel_state = TunnelState.CLOSED if err else TunnelState.OPEN
         if self.command_to_reply_to:
             yield from self.event_to_child(
                 events.OpenConnectionCompleted(self.command_to_reply_to, err)

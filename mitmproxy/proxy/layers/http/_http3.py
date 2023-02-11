@@ -63,7 +63,6 @@ class Http3Connection(HttpConnection):
         if isinstance(event, events.Start):
             yield from self.h3_conn.transmit()
 
-        # send mitmproxy HTTP events over the H3 connection
         elif isinstance(event, HttpEvent):
             try:
                 if isinstance(event, (RequestData, ResponseData)):
@@ -120,7 +119,6 @@ class Http3Connection(HttpConnection):
                 # transmit buffered data
                 yield from self.h3_conn.transmit()
 
-        # forward stream messages from the QUIC layer to the H3 connection
         elif isinstance(event, QuicStreamEvent):
             h3_events = self.h3_conn.handle_stream_event(event)
             if event.stream_id in self._stream_protocol_errors:
@@ -182,14 +180,10 @@ class Http3Connection(HttpConnection):
                                 yield ReceiveHttp(
                                     self.ReceiveEndOfMessage(h3_event.stream_id)
                                 )
-                    elif isinstance(h3_event, PushPromiseReceived):  # pragma: no cover
-                        # we don't support push
-                        pass
-                    else:  # pragma: no cover
+                    elif not isinstance(h3_event, PushPromiseReceived):  # pragma: no cover
                         raise AssertionError(f"Unexpected event: {event!r}")
             yield from self.h3_conn.transmit()
 
-        # report a protocol error for all remaining open streams when a connection is closed
         elif isinstance(event, QuicConnectionClosed):
             self._handle_event = self.done  # type: ignore
             self.h3_conn.handle_connection_closed(event)

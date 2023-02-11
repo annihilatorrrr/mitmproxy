@@ -11,7 +11,7 @@ from mitmproxy import hooks
 def concurrent(fn):
     if fn.__name__ not in set(hooks.all_hooks.keys()) - {"load", "configure"}:
         raise NotImplementedError(
-            "Concurrent decorator not supported for '%s' method." % fn.__name__
+            f"Concurrent decorator not supported for '{fn.__name__}' method."
         )
 
     async def _concurrent(*args):

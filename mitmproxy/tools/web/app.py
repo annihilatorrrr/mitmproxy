@@ -255,9 +255,7 @@ class RequestHandler(tornado.web.RequestHandler):
     @property
     def flow(self) -> mitmproxy.flow.Flow:
         flow_id = str(self.path_kwargs["flow_id"])
-        # FIXME: Add a facility to addon.view to safely access the store
-        flow = self.view.get_by_id(flow_id)
-        if flow:
+        if flow := self.view.get_by_id(flow_id):
             return flow
         else:
             raise APIError(404, "Flow not found.")
@@ -329,7 +327,7 @@ class DumpFlows(RequestHandler):
         try:
             match = flowfilter.parse(self.request.arguments["filter"][0].decode())
         except ValueError:  # thrown py flowfilter.parse if filter is invalid
-            raise APIError(400, f"Invalid filter argument / regex")
+            raise APIError(400, "Invalid filter argument / regex")
         except (
             KeyError,
             IndexError,
@@ -489,7 +487,7 @@ class FlowContent(RequestHandler):
         filename = None
         if original_cd:
             if m := re.search(r'filename=([-\w" .()]+)', original_cd):
-                filename = m.group(1)
+                filename = m[1]
         if not filename:
             filename = self.flow.request.path.split("?")[0].split("/")[-1]
 
@@ -539,7 +537,7 @@ class FlowContentView(RequestHandler):
             elif isinstance(flow, (TCPFlow, UDPFlow)):
                 messages = flow.messages
             else:
-                raise APIError(400, f"This flow has no messages.")
+                raise APIError(400, "This flow has no messages.")
             msgs = []
             for m in messages:
                 d = self.message_to_json(content_view, m, flow, max_lines)
@@ -558,9 +556,8 @@ class FlowContentView(RequestHandler):
 
 class Commands(RequestHandler):
     def get(self) -> None:
-        commands = {}
-        for name, cmd in self.master.commands.commands.items():
-            commands[name] = {
+        commands = {
+            name: {
                 "help": cmd.help,
                 "parameters": [
                     {
@@ -575,6 +572,8 @@ class Commands(RequestHandler):
                 else None,
                 "signature_help": cmd.signature_help(),
             }
+            for name, cmd in self.master.commands.commands.items()
+        }
         self.write(commands)
 
 

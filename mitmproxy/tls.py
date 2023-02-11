@@ -75,13 +75,14 @@ class ClientHello:
         """
         if ext := getattr(self._client_hello, "extensions", None):
             for extension in ext.extensions:
-                is_valid_sni_extension = (
+                if is_valid_sni_extension := (
                     extension.type == 0x00
                     and len(extension.body.server_names) == 1
                     and extension.body.server_names[0].name_type == 0
-                    and check.is_valid_host(extension.body.server_names[0].host_name)
-                )
-                if is_valid_sni_extension:
+                    and check.is_valid_host(
+                        extension.body.server_names[0].host_name
+                    )
+                ):
                     return extension.body.server_names[0].host_name.decode("ascii")
         return None
 
@@ -94,7 +95,7 @@ class ClientHello:
         if ext := getattr(self._client_hello, "extensions", None):
             for extension in ext.extensions:
                 if extension.type == 0x10:
-                    return list(x.name for x in extension.body.alpn_protocols)
+                    return [x.name for x in extension.body.alpn_protocols]
         return []
 
     @property

@@ -9,7 +9,7 @@ from mitmproxy import flow
 def load(loader):
     signal.signal(signal.SIGUSR1, debug1)
     signal.signal(signal.SIGUSR2, debug2)
-    print(f"Debug signal registered. Run the following commands for diagnostics:")
+    print("Debug signal registered. Run the following commands for diagnostics:")
     print()
     print(f"  kill -s USR1 {os.getpid()}")
     print(f"  kill -s USR2 {os.getpid()}")
@@ -80,7 +80,7 @@ def print_refs(x, ignore: set, seen: set, depth: int = 0, max_depth: int = 10):
         return
     else:
         if depth == 0:
-            print("- " + repr(str(x))[1:60] + f" ({id(x):x})")
+            print(f"- {repr(str(x))[1:60]}" + f" ({id(x):x})")
         else:
             print("  " * depth + "↖ " + repr(str(x))[1:60] + f" ({id(x):x})")
         seen.add(id(x))

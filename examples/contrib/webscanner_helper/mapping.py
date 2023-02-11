@@ -105,16 +105,15 @@ class MappingAddon:
     ) -> None:
         """Applies the given mapping template to the given soup."""
         for css_sel, replace in template.items():
-            mapped = soup.select(css_sel)
-            if not mapped:
-                self.logger.warning(
-                    f'Could not find "{css_sel}", can not freeze anything.'
-                )
-            else:
+            if mapped := soup.select(css_sel):
                 self.replace(
                     soup,
                     css_sel,
                     BeautifulSoup(replace, features=MappingAddonConfig.HTML_PARSER),
+                )
+            else:
+                self.logger.warning(
+                    f'Could not find "{css_sel}", can not freeze anything.'
                 )
 
     def response(self, flow: HTTPFlow) -> None:
@@ -140,18 +139,19 @@ class MappingAddon:
 
     def done(self) -> None:
         """Dumps all new content into the configuration file if self.persistent is set."""
-        if self.persistent:
-            # make sure that all items are strings and not soups.
-            def value_dumper(value):
-                store = {}
-                if value is None:
-                    return "None"
-                try:
-                    for css_sel, soup in value.items():
-                        store[css_sel] = str(soup)
-                except:
-                    raise RuntimeError(value)
-                return store
+        if not self.persistent:
+            return
+        # make sure that all items are strings and not soups.
+        def value_dumper(value):
+            store = {}
+            if value is None:
+                return "None"
+            try:
+                for css_sel, soup in value.items():
+                    store[css_sel] = str(soup)
+            except:
+                raise RuntimeError(value)
+            return store
 
-            with open(self.filename, "w") as f:
-                self.mapping_templates.dump(f, value_dumper)
+        with open(self.filename, "w") as f:
+            self.mapping_templates.dump(f, value_dumper)

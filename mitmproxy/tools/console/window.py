@@ -43,9 +43,7 @@ class StackWidget(urwid.Frame):
         command = self._command_map[
             ret
         ]  # awkward as they don't implement a full dict api
-        if command and command.startswith("cursor"):
-            return None
-        return ret
+        return None if command and command.startswith("cursor") else ret
 
 
 class WindowStack:
@@ -91,9 +89,7 @@ class WindowStack:
         """
         The current top widget - either a window or the active overlay.
         """
-        if self.overlay:
-            return self.overlay
-        return self.top_window()
+        return self.overlay or self.top_window()
 
     def push(self, wname):
         if self.stack[-1] == wname:
@@ -189,9 +185,11 @@ class Window(urwid.Frame):
         signals.window_refresh.send()
 
     def flow_changed(self, flow: flow.Flow) -> None:
-        if self.master.view.focus.flow:
-            if flow.id == self.master.view.focus.flow.id:
-                self.focus_changed()
+        if (
+            self.master.view.focus.flow
+            and flow.id == self.master.view.focus.flow.id
+        ):
+            self.focus_changed()
 
     def focus_changed(self, *args, **kwargs):
         """
@@ -298,8 +296,7 @@ class Window(urwid.Frame):
             return True
 
     def keypress(self, size, k):
-        k = super().keypress(size, k)
-        if k:
+        if k := super().keypress(size, k):
             return self.master.keymap.handle(self.focus_stack().top_widget().keyctx, k)
 
 

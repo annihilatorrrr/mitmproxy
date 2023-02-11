@@ -147,10 +147,6 @@ class NextLayer:
         def s(*layers):
             return stack_match(context, layers)
 
-        # client tls usually requires a server tls layer as parent layer, except:
-        #  - a secure web proxy doesn't have a server part.
-        #  - an upstream proxy uses the mode spec
-        #  - reverse proxy mode manages this itself.
         if (
             s(modes.HttpProxy)
             or s(modes.HttpUpstreamProxy)
@@ -158,12 +154,11 @@ class NextLayer:
             or s(modes.ReverseProxy, server_layer_cls)
         ):
             return client_layer_cls(context)
-        else:
-            # We already assign the next layer here so that the server layer
-            # knows that it can safely wait for a ClientHello.
-            ret = server_layer_cls(context)
-            ret.child_layer = client_layer_cls(context)
-            return ret
+        # We already assign the next layer here so that the server layer
+        # knows that it can safely wait for a ClientHello.
+        ret = server_layer_cls(context)
+        ret.child_layer = client_layer_cls(context)
+        return ret
 
     def is_destination_in_hosts(
         self, context: context.Context, hosts: Iterable[re.Pattern]
@@ -196,7 +191,7 @@ class NextLayer:
     def detect_udp_tls(
         self, data_client: bytes
     ) -> Optional[tuple[ClientHello, ClientSecurityLayerCls, ServerSecurityLayerCls]]:
-        if len(data_client) == 0:
+        if not data_client:
             return None
 
         # first try DTLS (the parser may return None)

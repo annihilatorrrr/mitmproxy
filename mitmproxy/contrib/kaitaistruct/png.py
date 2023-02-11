@@ -7,7 +7,9 @@ import zlib
 
 
 if getattr(kaitaistruct, 'API_VERSION', (0, 9)) < (0, 9):
-    raise Exception("Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have %s" % (kaitaistruct.__version__))
+    raise Exception(
+        f"Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have {kaitaistruct.__version__}"
+    )
 
 class Png(KaitaiStruct):
     """Test files for APNG can be found at the following locations:
@@ -41,18 +43,18 @@ class Png(KaitaiStruct):
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
         self._parent = _parent
-        self._root = _root if _root else self
+        self._root = _root or self
         self._read()
 
     def _read(self):
         self.magic = self._io.read_bytes(8)
-        if not self.magic == b"\x89\x50\x4E\x47\x0D\x0A\x1A\x0A":
+        if self.magic != b"\x89\x50\x4E\x47\x0D\x0A\x1A\x0A":
             raise kaitaistruct.ValidationNotEqualError(b"\x89\x50\x4E\x47\x0D\x0A\x1A\x0A", self.magic, self._io, u"/seq/0")
         self.ihdr_len = self._io.read_u4be()
-        if not self.ihdr_len == 13:
+        if self.ihdr_len != 13:
             raise kaitaistruct.ValidationNotEqualError(13, self.ihdr_len, self._io, u"/seq/1")
         self.ihdr_type = self._io.read_bytes(4)
-        if not self.ihdr_type == b"\x49\x48\x44\x52":
+        if self.ihdr_type != b"\x49\x48\x44\x52":
             raise kaitaistruct.ValidationNotEqualError(b"\x49\x48\x44\x52", self.ihdr_type, self._io, u"/seq/2")
         self.ihdr = Png.IhdrChunk(self._io, self, self._root)
         self.ihdr_crc = self._io.read_bytes(4)
@@ -69,7 +71,7 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -82,7 +84,7 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -151,7 +153,7 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -162,7 +164,7 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -191,7 +193,7 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -206,7 +208,7 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -224,7 +226,7 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -245,7 +247,7 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -271,7 +273,7 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -289,7 +291,7 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -307,7 +309,7 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -320,7 +322,7 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -337,7 +339,7 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -362,20 +364,20 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
             _on = self._root.ihdr.color_type
             if _on == Png.ColorType.indexed:
                 self.bkgd = Png.BkgdIndexed(self._io, self, self._root)
-            elif _on == Png.ColorType.truecolor_alpha:
+            elif (
+                _on == Png.ColorType.truecolor_alpha
+                or _on != Png.ColorType.greyscale_alpha
+                and _on == Png.ColorType.truecolor
+            ):
                 self.bkgd = Png.BkgdTruecolor(self._io, self, self._root)
-            elif _on == Png.ColorType.greyscale_alpha:
-                self.bkgd = Png.BkgdGreyscale(self._io, self, self._root)
-            elif _on == Png.ColorType.truecolor:
-                self.bkgd = Png.BkgdTruecolor(self._io, self, self._root)
-            elif _on == Png.ColorType.greyscale:
+            elif _on in [Png.ColorType.greyscale_alpha, Png.ColorType.greyscale]:
                 self.bkgd = Png.BkgdGreyscale(self._io, self, self._root)
 
 
@@ -389,7 +391,7 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -406,18 +408,18 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
             self.sequence_number = self._io.read_u4be()
             self.width = self._io.read_u4be()
-            if not self.width >= 1:
+            if self.width < 1:
                 raise kaitaistruct.ValidationLessThanError(1, self.width, self._io, u"/types/frame_control_chunk/seq/1")
             if not self.width <= self._root.ihdr.width:
                 raise kaitaistruct.ValidationGreaterThanError(self._root.ihdr.width, self.width, self._io, u"/types/frame_control_chunk/seq/1")
             self.height = self._io.read_u4be()
-            if not self.height >= 1:
+            if self.height < 1:
                 raise kaitaistruct.ValidationLessThanError(1, self.height, self._io, u"/types/frame_control_chunk/seq/2")
             if not self.height <= self._root.ihdr.height:
                 raise kaitaistruct.ValidationGreaterThanError(self._root.ihdr.height, self.height, self._io, u"/types/frame_control_chunk/seq/2")
@@ -454,7 +456,7 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -478,7 +480,7 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -494,7 +496,7 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -512,7 +514,7 @@ class Png(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):

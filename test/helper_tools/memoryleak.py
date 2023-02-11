@@ -21,10 +21,8 @@ def str_fun(obj):
             return "(-locals-)"
         if "self" in obj and isinstance(obj["self"], refbrowser.InteractiveBrowser):
             return "(-browser-)"
-    return (
-        str(id(obj))
-        + ": "
-        + str(obj)[:100].replace("\r\n", "\\r\\n").replace("\n", "\\n")
+    return f"{id(obj)}: " + str(obj)[:100].replace("\r\n", "\\r\\n").replace(
+        "\n", "\\n"
     )
 
 
@@ -38,7 +36,7 @@ def request(ctx, flow):
     if step == 1:
         all_objects = muppy.get_objects()
         ssl = muppy.filter(all_objects, SSL.Connection)[0]
-    if step == 2:
+    elif step == 2:
         ib = refbrowser.InteractiveBrowser(ssl, 2, str_fun, repeat=False)
         del ssl  # do this to unpollute view
         ib.main(True)

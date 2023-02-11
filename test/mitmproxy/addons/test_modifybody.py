@@ -77,7 +77,7 @@ class TestModifyBodyFile:
         with taddons.context(mb) as tctx:
             tmpfile = tmpdir.join("replacement")
             tmpfile.write("bar")
-            tctx.configure(mb, modify_body=["/~q/foo/@" + str(tmpfile)])
+            tctx.configure(mb, modify_body=[f"/~q/foo/@{str(tmpfile)}"])
             f = tflow.tflow()
             f.request.content = b"foo"
             mb.request(f)
@@ -91,7 +91,7 @@ class TestModifyBodyFile:
 
             tmpfile = tmpdir.join("replacement")
             tmpfile.write("bar")
-            tctx.configure(mb, modify_body=["/~q/foo/@" + str(tmpfile)])
+            tctx.configure(mb, modify_body=[f"/~q/foo/@{str(tmpfile)}"])
             tmpfile.remove()
             f = tflow.tflow()
             f.request.content = b"foo"

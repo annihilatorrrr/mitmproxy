@@ -30,11 +30,11 @@ class Benchmark:
             "wrk",
             "-c50",
             "-d5s",
-            "http://localhost:%s/benchmark.py" % ctx.master.server.address[1],
+            f"http://localhost:{ctx.master.server.address[1]}/benchmark.py",
             stdout=asyncio.subprocess.PIPE,
         )
         stdout, _ = await traf.communicate()
-        with open(ctx.options.benchmark_save_path + ".bench", mode="wb") as f:
+        with open(f"{ctx.options.benchmark_save_path}.bench", mode="wb") as f:
             f.write(stdout)
         logging.error(f"Proxy saw {self.reqs} requests, {self.resps} responses")
         logging.error(stdout.decode("ascii"))
@@ -59,7 +59,7 @@ class Benchmark:
             asyncio.get_running_loop().create_task(self.procs())
 
     def done(self):
-        self.pr.dump_stats(ctx.options.benchmark_save_path + ".prof")
+        self.pr.dump_stats(f"{ctx.options.benchmark_save_path}.prof")
 
 
 addons = [Benchmark()]

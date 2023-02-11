@@ -110,13 +110,7 @@ def twebsocketflow(
     if close_code is not None:
         flow.websocket.close_code = close_code
     else:
-        if err is True:
-            # ABNORMAL_CLOSURE
-            flow.websocket.close_code = 1006
-        else:
-            # NORMAL_CLOSURE
-            flow.websocket.close_code = 1000
-
+        flow.websocket.close_code = 1006 if err is True else 1000
     flow.live = True
     return flow
 
@@ -216,7 +210,7 @@ def tdummyflow(client_conn=True, server_conn=True, err=None) -> DummyFlow:
 
 
 def tclient_conn() -> connection.Client:
-    c = connection.Client(
+    return connection.Client(
         id=str(uuid.uuid4()),
         peername=("127.0.0.1", 22),
         sockname=("", 0),
@@ -236,11 +230,10 @@ def tclient_conn() -> connection.Client:
         cipher_list=[],
         proxy_mode=ProxyMode.parse("regular"),
     )
-    return c
 
 
 def tserver_conn() -> connection.Server:
-    c = connection.Server(
+    return connection.Server(
         id=str(uuid.uuid4()),
         address=("address", 22),
         peername=("192.168.0.1", 22),
@@ -261,12 +254,10 @@ def tserver_conn() -> connection.Server:
         cipher=None,
         cipher_list=[],
     )
-    return c
 
 
 def terr(content: str = "error") -> flow.Error:
-    err = flow.Error(content, 946681207)
-    return err
+    return flow.Error(content, 946681207)
 
 
 def twebsocket(messages: bool = True) -> websocket.WebSocketData:

@@ -135,9 +135,9 @@ class TestMapLocal:
     def test_configure(self, tmpdir):
         ml = MapLocal()
         with taddons.context(ml) as tctx:
-            tctx.configure(ml, map_local=["/foo/bar/" + str(tmpdir)])
+            tctx.configure(ml, map_local=[f"/foo/bar/{str(tmpdir)}"])
             with pytest.raises(Exception, match="Invalid regular expression"):
-                tctx.configure(ml, map_local=["/foo/+/" + str(tmpdir)])
+                tctx.configure(ml, map_local=[f"/foo/+/{str(tmpdir)}"])
             with pytest.raises(Exception, match="Invalid file path"):
                 tctx.configure(ml, map_local=["/foo/.+/three"])
 
@@ -147,7 +147,7 @@ class TestMapLocal:
         with taddons.context(ml) as tctx:
             tmpfile = tmpdir.join("foo.jpg")
             tmpfile.write("foo")
-            tctx.configure(ml, map_local=["|//example.org/images|" + str(tmpdir)])
+            tctx.configure(ml, map_local=[f"|//example.org/images|{str(tmpdir)}"])
             f = tflow.tflow()
             f.request.url = b"https://example.org/images/foo.jpg"
             ml.request(f)
@@ -155,7 +155,7 @@ class TestMapLocal:
 
             tmpfile = tmpdir.join("images", "bar.jpg")
             tmpfile.write("bar", ensure=True)
-            tctx.configure(ml, map_local=["|//example.org|" + str(tmpdir)])
+            tctx.configure(ml, map_local=[f"|//example.org|{str(tmpdir)}"])
             f = tflow.tflow()
             f.request.url = b"https://example.org/images/bar.jpg"
             ml.request(f)
@@ -163,9 +163,7 @@ class TestMapLocal:
 
             tmpfile = tmpdir.join("foofoobar.jpg")
             tmpfile.write("foofoobar", ensure=True)
-            tctx.configure(
-                ml, map_local=["|example.org/foo/foo/bar.jpg|" + str(tmpfile)]
-            )
+            tctx.configure(ml, map_local=[f"|example.org/foo/foo/bar.jpg|{str(tmpfile)}"])
             f = tflow.tflow()
             f.request.url = b"https://example.org/foo/foo/bar.jpg"
             ml.request(f)
@@ -176,7 +174,7 @@ class TestMapLocal:
         ml = MapLocal()
 
         with taddons.context(ml) as tctx:
-            tctx.configure(ml, map_local=["|example.org/css|" + str(tmpdir)])
+            tctx.configure(ml, map_local=[f"|example.org/css|{str(tmpdir)}"])
             f = tflow.tflow()
             f.request.url = b"https://example.org/css/nonexistent"
             ml.request(f)
@@ -185,7 +183,7 @@ class TestMapLocal:
 
             tmpfile = tmpdir.join("foo.jpg")
             tmpfile.write("foo")
-            tctx.configure(ml, map_local=["|//example.org/images|" + str(tmpfile)])
+            tctx.configure(ml, map_local=[f"|//example.org/images|{str(tmpfile)}"])
             tmpfile.remove()
             monkeypatch.setattr(Path, "is_file", lambda x: True)
             f = tflow.tflow()
@@ -198,7 +196,7 @@ class TestMapLocal:
         with taddons.context(ml) as tctx:
             tmpfile = tmpdir.join("foo.jpg")
             tmpfile.write("foo")
-            tctx.configure(ml, map_local=["|//example.org/images|" + str(tmpfile)])
+            tctx.configure(ml, map_local=[f"|//example.org/images|{str(tmpfile)}"])
             f = tflow.tflow()
             f.request.url = b"https://example.org/images/foo.jpg"
             f.kill()

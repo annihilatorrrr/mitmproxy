@@ -77,9 +77,7 @@ class MasterSecretLogger:
 
 
 def make_master_secret_logger(filename: Optional[str]) -> Optional[MasterSecretLogger]:
-    if filename:
-        return MasterSecretLogger(Path(filename))
-    return None
+    return MasterSecretLogger(Path(filename)) if filename else None
 
 
 log_master_secret = make_master_secret_logger(

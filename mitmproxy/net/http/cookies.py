@@ -78,7 +78,7 @@ def _read_quoted_string(s, start):
     ret = []
     # Skip the first quote
     i = start  # initialize in case the loop doesn't run.
-    for i in range(start + 1, len(s)):
+    for i in range(i + 1, len(s)):
         if escaping:
             ret.append(s[i])
             escaping = False
@@ -130,7 +130,7 @@ def _read_cookie_pairs(s, off=0):
 
         off += 1
 
-        if not off < len(s):
+        if off >= len(s):
             break
 
     return pairs, off
@@ -155,18 +155,9 @@ def _read_set_cookie_pairs(s: str, off=0) -> tuple[list[TPairs], int]:
             rhs, off = _read_value(s, off + 1, ";,")
 
             # Special handling of attributes
-            if lhs.lower() == "expires":
-                # 'expires' values can contain commas in them so they need to
-                # be handled separately.
-
-                # We actually bank on the fact that the expires value WILL
-                # contain a comma. Things will fail, if they don't.
-
-                # '3' is just a heuristic we use to determine whether we've
-                # only read a part of the expires value and we should read more.
-                if len(rhs) <= 3:
-                    trail, off = _read_value(s, off + 1, ";,")
-                    rhs = rhs + "," + trail
+            if lhs.lower() == "expires" and len(rhs) <= 3:
+                trail, off = _read_value(s, off + 1, ";,")
+                rhs = f"{rhs},{trail}"
 
             # as long as there's a "=", we consider it a pair
             pairs.append([lhs, rhs])
@@ -181,7 +172,7 @@ def _read_set_cookie_pairs(s: str, off=0) -> tuple[list[TPairs], int]:
 
         off += 1
 
-        if not off < len(s):
+        if off >= len(s):
             break
 
     if pairs or not cookies:
@@ -208,7 +199,7 @@ def _format_pairs(pairs, specials=(), sep="; "):
     for k, v in pairs:
         if k.lower() not in specials and _has_special(v):
             v = ESCAPE.sub(r"\\\1", v)
-            v = '"%s"' % v
+            v = f'"{v}"'
         vals.append(f"{k}={v}")
     return sep.join(vals)
 
@@ -299,8 +290,7 @@ def refresh_set_cookie_header(c: str, delta: int) -> str:
             raise ValueError("Invalid Cookie")
 
         if "expires" in attrs:
-            e = email.utils.parsedate_tz(attrs["expires"])
-            if e:
+            if e := email.utils.parsedate_tz(attrs["expires"]):
                 f = email.utils.mktime_tz(e) + delta
                 attrs.set_all("expires", [email.utils.formatdate(f, usegmt=True)])
             else:
@@ -324,8 +314,7 @@ def get_expiration_ts(cookie_attrs):
              None, if no expiration time is set.
     """
     if "expires" in cookie_attrs:
-        e = email.utils.parsedate_tz(cookie_attrs["expires"])
-        if e:
+        if e := email.utils.parsedate_tz(cookie_attrs["expires"]):
             return email.utils.mktime_tz(e)
 
     elif "max-age" in cookie_attrs:
@@ -351,10 +340,7 @@ def is_expired(cookie_attrs):
     now_ts = time.time()
 
     # If no expiration information was provided with the cookie
-    if exp_ts is None:
-        return False
-    else:
-        return exp_ts <= now_ts
+    return False if exp_ts is None else exp_ts <= now_ts
 
 
 def group_cookies(pairs):

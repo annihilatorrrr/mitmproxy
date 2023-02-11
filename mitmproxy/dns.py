@@ -298,7 +298,7 @@ class Message(serializable.SerializableDataclass):
             offset += length
             return name
 
-        for i in range(0, len_questions):
+        for i in range(len_questions):
             try:
                 name = unpack_domain_name()
                 type, class_ = Question.HEADER.unpack_from(buffer, offset)
@@ -308,10 +308,10 @@ class Message(serializable.SerializableDataclass):
                 raise struct.error(f"question #{i}: {str(e)}")
 
         def unpack_rrs(
-            section: list[ResourceRecord], section_name: str, count: int
-        ) -> None:
+                section: list[ResourceRecord], section_name: str, count: int
+            ) -> None:
             nonlocal buffer, offset
-            for i in range(0, count):
+            for i in range(count):
                 try:
                     name = unpack_domain_name()
                     type, class_, ttl, len_data = ResourceRecord.HEADER.unpack_from(

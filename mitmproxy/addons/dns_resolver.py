@@ -141,19 +141,20 @@ async def resolve_message(
 
 class DnsResolver:
     async def dns_request(self, flow: dns.DNSFlow) -> None:
-        should_resolve = (
+        if should_resolve := (
             (
                 isinstance(flow.client_conn.proxy_mode, mode_specs.DnsMode)
                 or (
-                    isinstance(flow.client_conn.proxy_mode, mode_specs.WireGuardMode)
+                    isinstance(
+                        flow.client_conn.proxy_mode, mode_specs.WireGuardMode
+                    )
                     and flow.server_conn.address == ("10.0.0.53", 53)
                 )
             )
             and flow.live
             and not flow.response
             and not flow.error
-        )
-        if should_resolve:
+        ):
             # TODO: We need to handle overly long responses here.
             flow.response = await resolve_message(
                 flow.request, asyncio.get_running_loop()

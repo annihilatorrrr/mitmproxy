@@ -122,7 +122,7 @@ class TestModifyHeadersFile:
         with taddons.context(mh) as tctx:
             tmpfile = tmpdir.join("replacement")
             tmpfile.write("two")
-            tctx.configure(mh, modify_headers=["/~q/one/@" + str(tmpfile)])
+            tctx.configure(mh, modify_headers=[f"/~q/one/@{str(tmpfile)}"])
             f = tflow.tflow()
             f.request.headers["one"] = "xxx"
             mh.request(f)
@@ -138,7 +138,7 @@ class TestModifyHeadersFile:
 
             tmpfile = tmpdir.join("replacement")
             tmpfile.write("bar")
-            tctx.configure(mh, modify_headers=["/~q/foo/@" + str(tmpfile)])
+            tctx.configure(mh, modify_headers=[f"/~q/foo/@{str(tmpfile)}"])
             tmpfile.remove()
             f = tflow.tflow()
             f.request.content = b"foo"

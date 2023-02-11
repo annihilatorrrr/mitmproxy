@@ -26,7 +26,7 @@ class TAddon:
         return "here"
 
     def __repr__(self):
-        return "Addon(%s)" % self.name
+        return f"Addon({self.name})"
 
     def done(self):
         pass

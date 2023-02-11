@@ -31,7 +31,7 @@ from mitmproxy.websocket import WebSocketMessage
 
 
 def indent(n: int, text: str) -> str:
-    l = str(text).strip().splitlines()
+    l = text.strip().splitlines()
     pad = " " * n
     return "\n".join(pad + i for i in l)
 
@@ -130,8 +130,9 @@ class Dumper:
         else:
             lines_to_echo = lines
 
-        content = "\r\n".join("".join(self._colorful(line)) for line in lines_to_echo)
-        if content:
+        if content := "\r\n".join(
+            "".join(self._colorful(line)) for line in lines_to_echo
+        ):
             self.echo("")
             self.echo(content)
 
@@ -163,27 +164,23 @@ class Dumper:
         method = self.style(
             strutils.escape_control_characters(method), fg=method_color, bold=True
         )
-        if ctx.options.showhost:
-            url = flow.request.pretty_url
-        else:
-            url = flow.request.url
-
+        url = flow.request.pretty_url if ctx.options.showhost else flow.request.url
         if ctx.options.flow_detail == 1:
             # We need to truncate before applying styles, so we just focus on the URL.
             terminal_width_limit = max(shutil.get_terminal_size()[0] - 25, 50)
             if len(url) > terminal_width_limit:
-                url = url[:terminal_width_limit] + "…"
+                url = f"{url[:terminal_width_limit]}…"
         url = self.style(strutils.escape_control_characters(url), bold=True)
 
-        http_version = ""
-        if not (
-            flow.request.is_http10 or flow.request.is_http11
-        ) or flow.request.http_version != getattr(
-            flow.response, "http_version", "HTTP/1.1"
+        if (
+            not flow.request.is_http10
+            and not flow.request.is_http11
+            or flow.request.http_version
+            != getattr(flow.response, "http_version", "HTTP/1.1")
         ):
-            # Hide version for h1 <-> h1 connections.
-            http_version = " " + flow.request.http_version
-
+            http_version = f" {flow.request.http_version}"
+        else:
+            http_version = ""
         self.echo(f"{client}: {method} {url}{http_version}")
 
     def _echo_response_line(self, flow: http.HTTPFlow) -> None:
@@ -210,10 +207,11 @@ class Dumper:
             blink=(code_int == 418),
         )
 
-        if not (flow.response.is_http2 or flow.response.is_http3):
-            reason = flow.response.reason
-        else:
-            reason = http.status_codes.RESPONSES.get(flow.response.status_code, "")
+        reason = (
+            http.status_codes.RESPONSES.get(flow.response.status_code, "")
+            if (flow.response.is_http2 or flow.response.is_http3)
+            else flow.response.reason
+        )
         reason = self.style(
             strutils.escape_control_characters(reason), fg=code_color, bold=True
         )
@@ -345,10 +343,7 @@ class Dumper:
         if self.match(f):
             message = f.messages[-1]
             direction = "->" if message.from_client else "<-"
-            if f.client_conn.tls_version == "QUIC":
-                type_ = f"quic/{f.type}"
-            else:
-                type_ = f.type
+            type_ = f"quic/{f.type}" if f.client_conn.tls_version == "QUIC" else f.type
             self.echo(
                 "{client} {direction} {type} {direction} {server}".format(
                     client=human.format_address(f.client_conn.peername),

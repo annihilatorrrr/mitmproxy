@@ -65,19 +65,18 @@ class _OrderKey:
             self.view.sig_view_refresh.send()
 
     def _key(self):
-        return "_order_%s" % id(self)
+        return f"_order_{id(self)}"
 
     def __call__(self, f):
-        if f.id in self.view._store:
-            k = self._key()
-            s = self.view.settings[f]
-            if k in s:
-                return s[k]
-            val = self.generate(f)
-            s[k] = val
-            return val
-        else:
+        if f.id not in self.view._store:
             return self.generate(f)
+        k = self._key()
+        s = self.view.settings[f]
+        if k in s:
+            return s[k]
+        val = self.generate(f)
+        s[k] = val
+        return val
 
 
 class OrderRequestStart(_OrderKey):
@@ -119,10 +118,7 @@ class OrderKeySize(_OrderKey):
                 size += len(f.response.raw_content)
             return size
         elif isinstance(f, (tcp.TCPFlow, udp.UDPFlow)):
-            size = 0
-            for message in f.messages:
-                size += len(message.content)
-            return size
+            return sum(len(message.content) for message in f.messages)
         elif isinstance(f, dns.DNSFlow):
             return f.response.size if f.response else 0
         else:
@@ -243,7 +239,7 @@ class View(collections.abc.Sequence):
         return self._view.__contains__(f)
 
     def _order_key_name(self):
-        return "_order_%s" % id(self.order_key)
+        return f"_order_{id(self.order_key)}"
 
     def _base_add(self, f):
         self.settings[f][self._order_key_name()] = self.order_key(f)
@@ -272,10 +268,8 @@ class View(collections.abc.Sequence):
             return
         if offset < 0:
             offset = len(self) + offset
-        if offset < 0:
-            offset = 0
-        if offset > len(self) - 1:
-            offset = len(self) - 1
+        offset = max(offset, 0)
+        offset = min(offset, len(self) - 1)
         self.focus.flow = self[offset]
 
     @command.command("view.focus.next")
@@ -287,8 +281,6 @@ class View(collections.abc.Sequence):
             idx = self.focus.index + 1
             if self.inbounds(idx):
                 self.focus.flow = self[idx]
-        else:
-            pass
 
     @command.command("view.focus.prev")
     def focus_prev(self) -> None:
@@ -299,8 +291,6 @@ class View(collections.abc.Sequence):
             idx = self.focus.index - 1
             if self.inbounds(idx):
                 self.focus.flow = self[idx]
-        else:
-            pass
 
     # Order
     @command.command("view.order.options")
@@ -321,7 +311,7 @@ class View(collections.abc.Sequence):
         Sets the current view order.
         """
         if order_key not in self.orders:
-            raise exceptions.CommandError("Unknown flow order: %s" % order_key)
+            raise exceptions.CommandError(f"Unknown flow order: {order_key}")
         key = self.orders[order_key]
         self.order_key = key
         newview = sortedcontainers.SortedListWithKey(key=key)
@@ -421,11 +411,10 @@ class View(collections.abc.Sequence):
         Duplicates the specified flows, and sets the focus to the first
         duplicate.
         """
-        dups = [f.copy() for f in flows]
-        if dups:
+        if dups := [f.copy() for f in flows]:
             self.add(dups)
             self.focus.flow = dups[0]
-            logging.log(ALERT, "Duplicated %s flows" % len(dups))
+            logging.log(ALERT, f"Duplicated {len(dups)} flows")
 
     @command.command("view.flows.remove")
     def remove(self, flows: Sequence[mitmproxy.flow.Flow]) -> None:
@@ -445,7 +434,7 @@ class View(collections.abc.Sequence):
                 del self._store[f.id]
                 self.sig_store_remove.send(flow=f)
         if len(flows) > 1:
-            logging.log(ALERT, "Removed %s flows" % len(flows))
+            logging.log(ALERT, f"Removed {len(flows)} flows")
 
     @command.command("view.flows.resolve")
     def resolve(self, flow_spec: str) -> Sequence[mitmproxy.flow.Flow]:
@@ -453,11 +442,11 @@ class View(collections.abc.Sequence):
         Resolve a flow list specification to an actual list of flows.
         """
         if flow_spec == "@all":
-            return [i for i in self._store.values()]
+            return list(self._store.values())
         if flow_spec == "@focus":
             return [self.focus.flow] if self.focus.flow else []
         elif flow_spec == "@shown":
-            return [i for i in self]
+            return list(self)
         elif flow_spec == "@hidden":
             return [i for i in self._store.values() if i not in self._view]
         elif flow_spec == "@marked":
@@ -479,7 +468,7 @@ class View(collections.abc.Sequence):
         try:
             req = http.Request.make(method.upper(), url)
         except ValueError as e:
-            raise exceptions.CommandError("Invalid URL: %s" % e)
+            raise exceptions.CommandError(f"Invalid URL: {e}")
 
         c = connection.Client(
             peername=("", 0),
@@ -573,9 +562,7 @@ class View(collections.abc.Sequence):
             self.set_filter(filt)
         if "view_order" in updated:
             if ctx.options.view_order not in self.orders:
-                raise exceptions.OptionsError(
-                    "Unknown flow order: %s" % ctx.options.view_order
-                )
+                raise exceptions.OptionsError(f"Unknown flow order: {ctx.options.view_order}")
             self.set_order(ctx.options.view_order)
         if "view_order_reversed" in updated:
             self.set_reversed(ctx.options.view_order_reversed)
@@ -690,9 +677,7 @@ class Focus:
 
     @property
     def index(self) -> Optional[int]:
-        if self.flow:
-            return self.view.index(self.flow)
-        return None
+        return self.view.index(self.flow) if self.flow else None
 
     @index.setter
     def index(self, idx):

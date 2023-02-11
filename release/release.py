@@ -117,7 +117,7 @@ if __name__ == "__main__":
 
         print("➡️ Reopen main for development...")
         subprocess.run(
-            ["git", "commit", "-a", "-m", f"reopen main for development"],
+            ["git", "commit", "-a", "-m", "reopen main for development"],
             cwd=root,
             check=True,
         )

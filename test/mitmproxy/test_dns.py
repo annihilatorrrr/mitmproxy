@@ -205,7 +205,7 @@ class TestDNSFlow:
         del a["id"]
         del b["id"]
         assert a == b
-        assert not f == f2
+        assert f != f2
         assert f is not f2
 
         assert f.request.get_state() == f2.request.get_state()

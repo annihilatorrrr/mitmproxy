@@ -39,7 +39,7 @@ class Choice(urwid.WidgetWrap):
             selection_type = "option_selected_key" if focus else "key"
             txt = [(selection_type, shortcut), ") ", txt]
         else:
-            txt = "   " + txt
+            txt = f"   {txt}"
         if current:
             s = "option_active_selected" if focus else "option_active"
         else:
@@ -84,15 +84,17 @@ class ChooserListWalker(urwid.ListWalker):
 
     def get_prev(self, pos):
         pos = pos - 1
-        if pos < 0:
-            return None, None
-        return self._get(pos, False), pos
+        return (None, None) if pos < 0 else (self._get(pos, False), pos)
 
     def choice_by_shortcut(self, shortcut):
-        for i, choice in enumerate(self.choices):
-            if shortcut == self.shortcuts[i : i + 1]:
-                return choice
-        return None
+        return next(
+            (
+                choice
+                for i, choice in enumerate(self.choices)
+                if shortcut == self.shortcuts[i : i + 1]
+            ),
+            None,
+        )
 
 
 class Chooser(urwid.WidgetWrap, layoutwidget.LayoutWidget):
@@ -121,8 +123,7 @@ class Chooser(urwid.WidgetWrap, layoutwidget.LayoutWidget):
 
     def keypress(self, size, key):
         key = self.master.keymap.handle_only("chooser", key)
-        choice = self.walker.choice_by_shortcut(key)
-        if choice:
+        if choice := self.walker.choice_by_shortcut(key):
             self.callback(choice)
             signals.pop_view_state.send()
             return

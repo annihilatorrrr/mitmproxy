@@ -53,9 +53,7 @@ def only(*types):
     def decorator(fn):
         @functools.wraps(fn)
         def filter_types(self, flow):
-            if isinstance(flow, types):
-                return fn(self, flow)
-            return False
+            return fn(self, flow) if isinstance(flow, types) else False
 
         return filter_types
 
@@ -79,8 +77,8 @@ class _Action(_Token):
     help: ClassVar[str]
 
     @classmethod
-    def make(klass, s, loc, toks):
-        return klass(*toks[1:])
+    def make(cls, s, loc, toks):
+        return cls(*toks[1:])
 
 
 class FErr(_Action):
@@ -88,7 +86,7 @@ class FErr(_Action):
     help = "Match error"
 
     def __call__(self, f):
-        return True if f.error else False
+        return bool(f.error)
 
 
 class FMarked(_Action):
@@ -245,9 +243,7 @@ class FContentTypeResponse(_Rex):
 
     @only(http.HTTPFlow)
     def __call__(self, f):
-        if f.response:
-            return _check_content_type(self.re, f.response)
-        return False
+        return _check_content_type(self.re, f.response) if f.response else False
 
 
 class FHead(_Rex):
@@ -259,9 +255,7 @@ class FHead(_Rex):
     def __call__(self, f):
         if f.request and self.re.search(bytes(f.request.headers)):
             return True
-        if f.response and self.re.search(bytes(f.response.headers)):
-            return True
-        return False
+        return bool(f.response and self.re.search(bytes(f.response.headers)))
 
 
 class FHeadRequest(_Rex):
@@ -407,10 +401,10 @@ class FUrl(_Rex):
     # FUrl is special, because it can be "naked".
 
     @classmethod
-    def make(klass, s, loc, toks):
+    def make(cls, s, loc, toks):
         if len(toks) > 1:
             toks = toks[1:]
-        return klass(*toks)
+        return cls(*toks)
 
     @only(http.HTTPFlow, dns.DNSFlow)
     def __call__(self, f):
@@ -672,22 +666,16 @@ def match(flt: Union[str, TFilter], flow: flow.Flow) -> bool:
     """
     if isinstance(flt, str):
         flt = parse(flt)
-    if flt:
-        return flt(flow)
-    return True
+    return flt(flow) if flt else True
 
 
 match_all: TFilter = parse("~all")
 """A filter function that matches all flows"""
 
 
-help = []
-for a in filter_unary:
-    help.append((f"~{a.code}", a.help))
-for b in filter_rex:
-    help.append((f"~{b.code} regex", b.help))
-for c in filter_int:
-    help.append((f"~{c.code} int", c.help))
+help = [(f"~{a.code}", a.help) for a in filter_unary]
+help.extend((f"~{b.code} regex", b.help) for b in filter_rex)
+help.extend((f"~{c.code} int", c.help) for c in filter_int)
 help.sort()
 help.extend(
     [

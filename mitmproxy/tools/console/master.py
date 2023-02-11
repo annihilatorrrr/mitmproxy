@@ -113,13 +113,14 @@ class ConsoleMaster(master.Master):
             return m
         if m := os.environ.get("EDITOR"):
             return m
-        for editor in "sensible-editor", "nano", "vim":
-            if shutil.which(editor):
-                return editor
-        if os.name == "nt":
-            return "notepad"
-        else:
-            return "vi"
+        return next(
+            (
+                editor
+                for editor in ("sensible-editor", "nano", "vim")
+                if shutil.which(editor)
+            ),
+            "notepad" if os.name == "nt" else "vi",
+        )
 
     def spawn_editor(self, data: T) -> T:
         text = not isinstance(data, bytes)
@@ -133,7 +134,7 @@ class ConsoleMaster(master.Master):
             try:
                 subprocess.call(cmd)
             except:
-                signals.status_message.send(message="Can't start editor: %s" % c)
+                signals.status_message.send(message=f"Can't start editor: {c}")
             else:
                 with open(name, "r" if text else "rb") as f:
                     data = f.read()
@@ -169,7 +170,7 @@ class ConsoleMaster(master.Master):
                 subprocess.call(cmd, shell=False)
             except:
                 signals.status_message.send(
-                    message="Can't start external viewer: %s" % " ".join(c)
+                    message=f"""Can't start external viewer: {" ".join(c)}"""
                 )
         # add a small delay before deletion so that the file is not removed before being loaded by the viewer
         t = threading.Timer(1.0, os.unlink, args=[name])

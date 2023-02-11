@@ -90,7 +90,7 @@ def pytest_runtestloop(session):
         if not any(f.startswith(excluded_f) for excluded_f in excluded_files)
     ]
 
-    for name in coverage_values.keys():
+    for name in coverage_values:
         files = [f for f in measured_files if f.startswith(os.path.normpath(name))]
         try:
             with open(os.devnull, "w") as null:
@@ -134,8 +134,10 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
                 markup = {"green": True}
             terminalreporter.write(msg, **markup)
     else:
-        msg = "SUCCESS: Full test coverage reached in modules and files:\n"
-        msg += "{}\n\n".format("\n".join(config.option.full_cov))
+        msg = (
+            "SUCCESS: Full test coverage reached in modules and files:\n"
+            + "{}\n\n".format("\n".join(config.option.full_cov))
+        )
         terminalreporter.write(msg, green=True)
 
     msg = "\nExcluded files:\n"

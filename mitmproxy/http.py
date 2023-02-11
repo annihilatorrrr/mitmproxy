@@ -375,11 +375,7 @@ class Message(serializable.Serializable):
             del self.headers["content-encoding"]
             self.raw_content = value
 
-        if "transfer-encoding" in self.headers:
-            # https://httpwg.org/specs/rfc7230.html#header.content-length
-            # don't set content-length if a transfer-encoding is provided
-            pass
-        else:
+        if "transfer-encoding" not in self.headers:
             self.headers["content-length"] = str(len(self.raw_content))
 
     def get_content(self, strict: bool = True) -> Optional[bytes]:
@@ -389,47 +385,38 @@ class Message(serializable.Serializable):
         """
         if self.raw_content is None:
             return None
-        ce = self.headers.get("content-encoding")
-        if ce:
-            try:
-                content = encoding.decode(self.raw_content, ce)
-                # A client may illegally specify a byte -> str encoding here (e.g. utf8)
-                if isinstance(content, str):
-                    raise ValueError(f"Invalid Content-Encoding: {ce}")
-                return content
-            except ValueError:
-                if strict:
-                    raise
-                return self.raw_content
-        else:
+        if not (ce := self.headers.get("content-encoding")):
+            return self.raw_content
+        try:
+            content = encoding.decode(self.raw_content, ce)
+            # A client may illegally specify a byte -> str encoding here (e.g. utf8)
+            if isinstance(content, str):
+                raise ValueError(f"Invalid Content-Encoding: {ce}")
+            return content
+        except ValueError:
+            if strict:
+                raise
             return self.raw_content
 
     def _get_content_type_charset(self) -> Optional[str]:
-        ct = parse_content_type(self.headers.get("content-type", ""))
-        if ct:
+        if ct := parse_content_type(self.headers.get("content-type", "")):
             return ct[2].get("charset")
         return None
 
     def _guess_encoding(self, content: bytes = b"") -> str:
         enc = self._get_content_type_charset()
-        if not enc:
-            if "json" in self.headers.get("content-type", ""):
-                enc = "utf8"
-        if not enc:
-            if "html" in self.headers.get("content-type", ""):
-                meta_charset = re.search(
-                    rb"""<meta[^>]+charset=['"]?([^'">]+)""", content, re.IGNORECASE
-                )
-                if meta_charset:
-                    enc = meta_charset.group(1).decode("ascii", "ignore")
-        if not enc:
-            if "text/css" in self.headers.get("content-type", ""):
-                # @charset rule must be the very first thing.
-                css_charset = re.match(
-                    rb"""@charset "([^"]+)";""", content, re.IGNORECASE
-                )
-                if css_charset:
-                    enc = css_charset.group(1).decode("ascii", "ignore")
+        if not enc and "json" in self.headers.get("content-type", ""):
+            enc = "utf8"
+        if not enc and "html" in self.headers.get("content-type", ""):
+            if meta_charset := re.search(
+                rb"""<meta[^>]+charset=['"]?([^'">]+)""", content, re.IGNORECASE
+            ):
+                enc = meta_charset[1].decode("ascii", "ignore")
+        if not enc and "text/css" in self.headers.get("content-type", ""):
+            if css_charset := re.match(
+                rb"""@charset "([^"]+)";""", content, re.IGNORECASE
+            ):
+                enc = css_charset[1].decode("ascii", "ignore")
         if not enc:
             enc = "latin-1"
         # Use GB 18030 as the superset of GB2312 and GBK to fix common encoding problems on Chinese websites.
@@ -601,10 +588,7 @@ class Request(Message):
         )
 
     def __repr__(self) -> str:
-        if self.host and self.port:
-            hostport = f"{self.host}:{self.port}"
-        else:
-            hostport = ""
+        hostport = f"{self.host}:{self.port}" if self.host and self.port else ""
         path = self.path or ""
         return f"Request({self.method} {hostport}{path})"
 
@@ -638,9 +622,7 @@ class Request(Message):
             headers = Headers(headers)  # type: ignore
         else:
             raise TypeError(
-                "Expected headers to be an iterable or dict, but is {}.".format(
-                    type(headers).__name__
-                )
+                f"Expected headers to be an iterable or dict, but is {type(headers).__name__}."
             )
 
         req = cls(
@@ -842,8 +824,7 @@ class Request(Message):
         *Warning:* When working in adversarial environments, this may not reflect the actual destination
         as the Host header could be spoofed.
         """
-        authority = self.host_header
-        if authority:
+        if authority := self.host_header:
             return url.parse_authority(authority, check=False)[0]
         else:
             return self.host
@@ -947,8 +928,7 @@ class Request(Message):
         """
         Limits the permissible Accept-Encoding values, based on what we can decode appropriately.
         """
-        accept_encoding = self.headers.get("accept-encoding")
-        if accept_encoding:
+        if accept_encoding := self.headers.get("accept-encoding"):
             self.headers["accept-encoding"] = ", ".join(
                 e
                 for e in {"gzip", "identity", "deflate", "br", "zstd"}
@@ -1115,9 +1095,7 @@ class Response(Message):
             headers = Headers(headers)  # type: ignore
         else:
             raise TypeError(
-                "Expected headers to be an iterable or dict, but is {}.".format(
-                    type(headers).__name__
-                )
+                f"Expected headers to be an iterable or dict, but is {type(headers).__name__}."
             )
 
         resp = cls(
@@ -1219,8 +1197,7 @@ class Response(Message):
         ]
         for i in refresh_headers:
             if i in self.headers:
-                d = parsedate_tz(self.headers[i])
-                if d:
+                if d := parsedate_tz(self.headers[i]):
                     new = mktime_tz(d) + delta
                     try:
                         self.headers[i] = formatdate(new, usegmt=True)

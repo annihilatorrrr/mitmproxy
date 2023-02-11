@@ -79,9 +79,7 @@ class MQTTControlPacket:
             self._parse_subscribe_payload()
         elif self.packet_type == self.SUBACK:
             pass
-        elif self.packet_type == self.UNSUBSCRIBE:
-            pass
-        else:
+        elif self.packet_type != self.UNSUBSCRIBE:
             self.payload = None
 
     def pprint(self):
@@ -106,9 +104,7 @@ Password: {strutils.bytes_to_escaped_str(self.payload.get('Password', b'None'))}
             payload = strutils.bytes_to_escaped_str(self.payload)
 
             s += f" '{payload}' to topic '{topic_name}'"
-        elif self.packet_type in [self.PINGREQ, self.PINGRESP]:
-            pass
-        else:
+        elif self.packet_type not in [self.PINGREQ, self.PINGRESP]:
             s = f"Packet type {self.Names[self.packet_type]} is not supported yet!"
 
         return s
@@ -164,20 +160,16 @@ Password: {strutils.bytes_to_escaped_str(self.payload.get('Password', b'None'))}
     def _parse_connect_variable_headers(self):
         offset = len(self._packet) - self.remaining_length
 
-        self.variable_headers = {}
-        self.connect_flags = {}
-
-        self.variable_headers["ProtocolName"] = self._packet[offset : offset + 6]
-        self.variable_headers["ProtocolLevel"] = self._packet[offset + 6 : offset + 7]
-        self.variable_headers["ConnectFlags"] = self._packet[offset + 7 : offset + 8]
-        self.variable_headers["KeepAlive"] = self._packet[offset + 8 : offset + 10]
-        # http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc385349229
-        self.connect_flags["CleanSession"] = bool(
-            self.variable_headers["ConnectFlags"][0] & 0x02
-        )
-        self.connect_flags["Will"] = bool(
-            self.variable_headers["ConnectFlags"][0] & 0x04
-        )
+        self.variable_headers = {
+            "ProtocolName": self._packet[offset : offset + 6],
+            "ProtocolLevel": self._packet[offset + 6 : offset + 7],
+            "ConnectFlags": self._packet[offset + 7 : offset + 8],
+            "KeepAlive": self._packet[offset + 8 : offset + 10],
+        }
+        self.connect_flags = {
+            "CleanSession": bool(self.variable_headers["ConnectFlags"][0] & 0x02),
+            "Will": bool(self.variable_headers["ConnectFlags"][0] & 0x04),
+        }
         self.will_qos = (self.variable_headers["ConnectFlags"][0] >> 3) & 0x03
         self.connect_flags["WillRetain"] = bool(
             self.variable_headers["ConnectFlags"][0] & 0x20

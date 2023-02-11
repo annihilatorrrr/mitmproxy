@@ -13,7 +13,7 @@ for example in examples:
     code = example.read_text()
     slug = str(example.with_suffix("").relative_to(example_dir))
     slug = re.sub(r"[^a-zA-Z]", "-", slug)
-    match = re.search(
+    if match := re.search(
         r'''
         ^
         (?:[#][^\n]*\n)?  # there might be a shebang
@@ -25,9 +25,8 @@ for example in examples:
     ''',
         code,
         re.VERBOSE,
-    )
-    if match:
-        comment = " — " + match.group(1)
+    ):
+        comment = f" — {match[1]}"
     else:
         comment = ""
     overview.append(f"  * [{example.name}](#{slug}){comment}\n")

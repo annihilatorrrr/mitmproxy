@@ -10,23 +10,24 @@ from mitmproxy.log import ALERT
 
 
 def get_chrome_executable() -> Optional[str]:
-    for browser in (
-        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-        # https://stackoverflow.com/questions/40674914/google-chrome-path-in-windows-10
-        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-        r"C:\Program Files (x86)\Google\Application\chrome.exe",
-        # Linux binary names from Python's webbrowser module.
-        "google-chrome",
-        "google-chrome-stable",
-        "chrome",
-        "chromium",
-        "chromium-browser",
-        "google-chrome-unstable",
-    ):
-        if shutil.which(browser):
-            return browser
-
-    return None
+    return next(
+        (
+            browser
+            for browser in (
+                "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+                r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+                r"C:\Program Files (x86)\Google\Application\chrome.exe",
+                "google-chrome",
+                "google-chrome-stable",
+                "chrome",
+                "chromium",
+                "chromium-browser",
+                "google-chrome-unstable",
+            )
+            if shutil.which(browser)
+        ),
+        None,
+    )
 
 
 def get_chrome_flatpak() -> Optional[str]:
@@ -85,11 +86,8 @@ class Browser:
             subprocess.Popen(
                 [
                     *cmd,
-                    "--user-data-dir=%s" % str(tdir.name),
-                    "--proxy-server={}:{}".format(
-                        ctx.options.listen_host or "127.0.0.1",
-                        ctx.options.listen_port or "8080",
-                    ),
+                    f"--user-data-dir={str(tdir.name)}",
+                    f'--proxy-server={ctx.options.listen_host or "127.0.0.1"}:{ctx.options.listen_port or "8080"}',
                     "--disable-fre",
                     "--no-default-browser-check",
                     "--no-first-run",

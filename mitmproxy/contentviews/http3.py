@@ -100,10 +100,7 @@ class ViewHttp3(base.View):
         state = self.connections[flow]
 
         for message in flow.messages[state.message_count :]:
-            if message.from_client:
-                buf = state.client_buf
-            else:
-                buf = state.server_buf
+            buf = state.client_buf if message.from_client else state.server_buf
             buf += message.content
 
             if state.message_count == 0 and flow.metadata["quic_is_unidirectional"]:
@@ -137,13 +134,7 @@ class ViewHttp3(base.View):
             state.message_count += 1
 
         frames = state.frames.get(flow.messages.index(tcp_message), [])
-        if not frames:
-            return (
-                "HTTP/3",
-                [],
-            )  # base.format_text(f"(no complete frames here, {state=})")
-        else:
-            return "HTTP/3", fmt_frames(frames)
+        return ("HTTP/3", fmt_frames(frames)) if frames else ("HTTP/3", [])
 
     def render_priority(
         self, data: bytes, flow: Optional[flow.Flow] = None, **metadata

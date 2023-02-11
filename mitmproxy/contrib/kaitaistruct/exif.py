@@ -6,13 +6,15 @@ from enum import Enum
 
 
 if getattr(kaitaistruct, 'API_VERSION', (0, 9)) < (0, 9):
-    raise Exception("Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have %s" % (kaitaistruct.__version__))
+    raise Exception(
+        f"Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have {kaitaistruct.__version__}"
+    )
 
 class Exif(KaitaiStruct):
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
         self._parent = _parent
-        self._root = _root if _root else self
+        self._root = _root or self
         self._read()
 
     def _read(self):
@@ -23,7 +25,7 @@ class Exif(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -51,7 +53,7 @@ class Exif(KaitaiStruct):
             def __init__(self, _io, _parent=None, _root=None, _is_le=None):
                 self._io = _io
                 self._parent = _parent
-                self._root = _root if _root else self
+                self._root = _root or self
                 self._is_le = _is_le
                 self._read()
 
@@ -66,17 +68,19 @@ class Exif(KaitaiStruct):
             def _read_le(self):
                 self.num_fields = self._io.read_u2le()
                 self.fields = []
-                for i in range(self.num_fields):
-                    self.fields.append(Exif.ExifBody.IfdField(self._io, self, self._root, self._is_le))
-
+                self.fields.extend(
+                    Exif.ExifBody.IfdField(self._io, self, self._root, self._is_le)
+                    for _ in range(self.num_fields)
+                )
                 self.next_ifd_ofs = self._io.read_u4le()
 
             def _read_be(self):
                 self.num_fields = self._io.read_u2be()
                 self.fields = []
-                for i in range(self.num_fields):
-                    self.fields.append(Exif.ExifBody.IfdField(self._io, self, self._root, self._is_le))
-
+                self.fields.extend(
+                    Exif.ExifBody.IfdField(self._io, self, self._root, self._is_le)
+                    for _ in range(self.num_fields)
+                )
                 self.next_ifd_ofs = self._io.read_u4be()
 
             @property
@@ -87,10 +91,7 @@ class Exif(KaitaiStruct):
                 if self.next_ifd_ofs != 0:
                     _pos = self._io.pos()
                     self._io.seek(self.next_ifd_ofs)
-                    if self._is_le:
-                        self._m_next_ifd = Exif.ExifBody.Ifd(self._io, self, self._root, self._is_le)
-                    else:
-                        self._m_next_ifd = Exif.ExifBody.Ifd(self._io, self, self._root, self._is_le)
+                    self._m_next_ifd = Exif.ExifBody.Ifd(self._io, self, self._root, self._is_le)
                     self._io.seek(_pos)
 
                 return getattr(self, '_m_next_ifd', None)
@@ -570,7 +571,7 @@ class Exif(KaitaiStruct):
             def __init__(self, _io, _parent=None, _root=None, _is_le=None):
                 self._io = _io
                 self._parent = _parent
-                self._root = _root if _root else self
+                self._root = _root or self
                 self._is_le = _is_le
                 self._read()
 
@@ -627,10 +628,7 @@ class Exif(KaitaiStruct):
                     io = self._root._io
                     _pos = io.pos()
                     io.seek(self.ofs_or_data)
-                    if self._is_le:
-                        self._m_data = io.read_bytes(self.byte_length)
-                    else:
-                        self._m_data = io.read_bytes(self.byte_length)
+                    self._m_data = io.read_bytes(self.byte_length)
                     io.seek(_pos)
 
                 return getattr(self, '_m_data', None)
@@ -643,10 +641,7 @@ class Exif(KaitaiStruct):
 
             _pos = self._io.pos()
             self._io.seek(self.ifd0_ofs)
-            if self._is_le:
-                self._m_ifd0 = Exif.ExifBody.Ifd(self._io, self, self._root, self._is_le)
-            else:
-                self._m_ifd0 = Exif.ExifBody.Ifd(self._io, self, self._root, self._is_le)
+            self._m_ifd0 = Exif.ExifBody.Ifd(self._io, self, self._root, self._is_le)
             self._io.seek(_pos)
             return getattr(self, '_m_ifd0', None)
 

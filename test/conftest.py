@@ -42,7 +42,7 @@ class AsyncLogCaptureFixture:
 
     async def await_log(self, text, timeout=2):
         await asyncio.sleep(0)
-        for i in range(int(timeout / 0.01)):
+        for _ in range(int(timeout / 0.01)):
             if text in self.caplog.text:
                 return True
             else:

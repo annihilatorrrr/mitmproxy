@@ -51,9 +51,7 @@ class FlowListWalker(urwid.ListWalker):
         # The stub implementation of positions can go once this issue is resolved:
         # https://github.com/urwid/urwid/issues/294
         ret = range(self.master.view.get_length())
-        if reverse:
-            return reversed(ret)
-        return ret
+        return reversed(ret) if reverse else ret
 
     def view_changed(self):
         self._modified()
@@ -71,9 +69,11 @@ class FlowListWalker(urwid.ListWalker):
 
     @lru_cache(maxsize=None)
     def _get(self, pos: int) -> tuple[Optional[FlowItem], Optional[int]]:
-        if not self.master.view.inbounds(pos):
-            return None, None
-        return FlowItem(self.master, self.master.view[pos]), pos
+        return (
+            (FlowItem(self.master, self.master.view[pos]), pos)
+            if self.master.view.inbounds(pos)
+            else (None, None)
+        )
 
     def get_next(self, pos):
         return self._get(pos + 1)

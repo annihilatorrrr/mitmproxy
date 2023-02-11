@@ -105,11 +105,7 @@ class UDPLayer(layer.Layer):
 
         from_client = event.connection == self.context.client
         send_to: Connection
-        if from_client:
-            send_to = self.context.server
-        else:
-            send_to = self.context.client
-
+        send_to = self.context.server if from_client else self.context.client
         if isinstance(event, events.DataReceived):
             if self.flow:
                 udp_message = udp.UDPMessage(from_client, event.data)

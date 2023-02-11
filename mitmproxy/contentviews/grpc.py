@@ -233,10 +233,10 @@ class ProtoParser:
                 val = wire_data[pos : pos + length]
                 pos += length
                 preferred_decoding = ProtoParser.DecodedTypes.message
-            elif (
-                wt == ProtoParser.WireTypes.group_start
-                or wt == ProtoParser.WireTypes.group_end
-            ):
+            elif wt in [
+                ProtoParser.WireTypes.group_start,
+                ProtoParser.WireTypes.group_end,
+            ]:
                 raise ValueError(f"deprecated field: {wt}")
             elif wt == ProtoParser.WireTypes.bit_32:
                 offset, val = ProtoParser._read_u32(wire_data[pos:])
@@ -277,43 +277,40 @@ class ProtoParser:
         # the packed field has to have WireType length delimited, whereas the contained
         # individual types have to have a different WireType, which is derived from
         # the intended decoding
-        if (
-            packed_field.wire_type != ProtoParser.WireTypes.len_delimited
-            or not isinstance(packed_field.wire_value, bytes)
-        ):
+        if packed_field.wire_type != ProtoParser.WireTypes.len_delimited:
             raise ValueError(
                 "packed fields have to be embedded in a length delimited message"
             )
         # wiretype to read has to be determined from intended decoding
         packed_wire_type: ProtoParser.WireTypes
-        if (
-            intended_decoding == ProtoParser.DecodedTypes.int32
-            or intended_decoding == ProtoParser.DecodedTypes.int64
-            or intended_decoding == ProtoParser.DecodedTypes.uint32
-            or intended_decoding == ProtoParser.DecodedTypes.uint64
-            or intended_decoding == ProtoParser.DecodedTypes.sint32
-            or intended_decoding == ProtoParser.DecodedTypes.sint64
-            or intended_decoding == ProtoParser.DecodedTypes.bool
-            or intended_decoding == ProtoParser.DecodedTypes.enum
-        ):
+        if intended_decoding in [
+            ProtoParser.DecodedTypes.int32,
+            ProtoParser.DecodedTypes.int64,
+            ProtoParser.DecodedTypes.uint32,
+            ProtoParser.DecodedTypes.uint64,
+            ProtoParser.DecodedTypes.sint32,
+            ProtoParser.DecodedTypes.sint64,
+            ProtoParser.DecodedTypes.bool,
+            ProtoParser.DecodedTypes.enum,
+        ]:
             packed_wire_type = ProtoParser.WireTypes.varint
-        elif (
-            intended_decoding == ProtoParser.DecodedTypes.fixed32
-            or intended_decoding == ProtoParser.DecodedTypes.sfixed32
-            or intended_decoding == ProtoParser.DecodedTypes.float
-        ):
+        elif intended_decoding in [
+            ProtoParser.DecodedTypes.fixed32,
+            ProtoParser.DecodedTypes.sfixed32,
+            ProtoParser.DecodedTypes.float,
+        ]:
             packed_wire_type = ProtoParser.WireTypes.bit_32
-        elif (
-            intended_decoding == ProtoParser.DecodedTypes.fixed64
-            or intended_decoding == ProtoParser.DecodedTypes.sfixed64
-            or intended_decoding == ProtoParser.DecodedTypes.double
-        ):
+        elif intended_decoding in [
+            ProtoParser.DecodedTypes.fixed64,
+            ProtoParser.DecodedTypes.sfixed64,
+            ProtoParser.DecodedTypes.double,
+        ]:
             packed_wire_type = ProtoParser.WireTypes.bit_64
-        elif (
-            intended_decoding == ProtoParser.DecodedTypes.string
-            or intended_decoding == ProtoParser.DecodedTypes.bytes
-            or intended_decoding == ProtoParser.DecodedTypes.message
-        ):
+        elif intended_decoding in [
+            ProtoParser.DecodedTypes.string,
+            ProtoParser.DecodedTypes.bytes,
+            ProtoParser.DecodedTypes.message,
+        ]:
             packed_wire_type = ProtoParser.WireTypes.len_delimited
         else:
             # should never happen, no test
@@ -378,10 +375,10 @@ class ProtoParser:
                     )
                 )
                 pos += length
-        elif (
-            packed_wire_type == ProtoParser.WireTypes.group_start
-            or packed_wire_type == ProtoParser.WireTypes.group_end
-        ):
+        elif packed_wire_type in [
+            ProtoParser.WireTypes.group_start,
+            ProtoParser.WireTypes.group_end,
+        ]:
             raise ValueError("group tags can not be encoded packed")
         elif packed_wire_type == ProtoParser.WireTypes.bit_32:
             if len(wire_data) % 4 != 0:
@@ -521,12 +518,8 @@ class ProtoParser:
                             else:
                                 # overwrite matches till last rule was inspected
                                 # (f.e. allows to define name in one rule and intended_decoding in another one)
-                                name = fd.name if fd.name else name
-                                decoding = (
-                                    fd.intended_decoding
-                                    if fd.intended_decoding
-                                    else decoding
-                                )
+                                name = fd.name or name
+                                decoding = fd.intended_decoding or decoding
                                 if fd.as_packed:
                                     as_packed = True
 
@@ -610,7 +603,7 @@ class ProtoParser:
         def decode_as(
             self, intended_decoding: ProtoParser.DecodedTypes, as_packed: bool = False
         ) -> bool | int | float | bytes | str | list[ProtoParser.Field]:
-            if as_packed is True:
+            if as_packed:
                 return ProtoParser.read_packed_fields(packed_field=self)
 
             if self.wire_type == ProtoParser.WireTypes.varint:
@@ -630,10 +623,10 @@ class ProtoParser:
                     if self.wire_value.bit_length() > 32:
                         raise TypeError("wire value too large for uint32")
                     return self.wire_value  # already 'int' which was parsed as unsigned
-                elif (
-                    intended_decoding == ProtoParser.DecodedTypes.uint64
-                    or intended_decoding == ProtoParser.DecodedTypes.enum
-                ):
+                elif intended_decoding in [
+                    ProtoParser.DecodedTypes.uint64,
+                    ProtoParser.DecodedTypes.enum,
+                ]:
                     if self.wire_value.bit_length() > 64:
                         raise TypeError("wire value too large")
                     return self.wire_value  # already 'int' which was parsed as unsigned
@@ -649,10 +642,10 @@ class ProtoParser:
                     # ZigZag decode
                     # Ref: https://gist.github.com/mfuerstenau/ba870a29e16536fdbaba
                     return (self.wire_value >> 1) ^ -(self.wire_value & 1)
-                elif (
-                    intended_decoding == ProtoParser.DecodedTypes.float
-                    or intended_decoding == ProtoParser.DecodedTypes.double
-                ):
+                elif intended_decoding in [
+                    ProtoParser.DecodedTypes.float,
+                    ProtoParser.DecodedTypes.double,
+                ]:
                     # special case, not complying to protobuf specs
                     return self._wire_value_as_float()
             elif self.wire_type == ProtoParser.WireTypes.bit_64:
@@ -689,7 +682,7 @@ class ProtoParser:
             # if here, there is no valid decoding
             raise TypeError("intended decoding mismatches wire type")
 
-        def encode_from(inputval, intended_encoding: ProtoParser.DecodedTypes):
+        def encode_from(self, intended_encoding: ProtoParser.DecodedTypes):
             raise NotImplementedError(
                 "Future work, needed to manipulate and re-encode protobuf message, with respect to given wire types"
             )
@@ -817,9 +810,9 @@ class ProtoParser:
                 continue
 
             if self.options.include_wiretype:
-                col1 = "[{}->{}]".format(field_dict["wireType"], field_dict["decoding"])
+                col1 = f'[{field_dict["wireType"]}->{field_dict["decoding"]}]'
             else:
-                col1 = "[{}]".format(field_dict["decoding"])
+                col1 = f'[{field_dict["decoding"]}]'
             col2 = field_dict["name"]  # empty string if not set (consumes no space)
             col3 = field_dict["tag"]
             col4 = str(field_dict["val"])
@@ -1115,8 +1108,4 @@ class ViewGrpcProtobuf(base.View):
     ) -> float:
         if bool(data) and content_type in self.__content_types_grpc:
             return 1
-        if bool(data) and content_type in self.__content_types_pb:
-            # replace existing protobuf renderer preference (adjust by option)
-            return 1.5
-        else:
-            return 0
+        return 1.5 if bool(data) and content_type in self.__content_types_pb else 0

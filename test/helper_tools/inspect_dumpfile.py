@@ -24,10 +24,10 @@ def inspect(input):
     pretty-print a dumpfile
     """
     while True:
-        data = read_tnetstring(input)
-        if not data:
+        if data := read_tnetstring(input):
+            pprint(data)
+        else:
             break
-        pprint(data)
 
 
 if __name__ == "__main__":

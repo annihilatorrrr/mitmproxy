@@ -114,7 +114,7 @@ def test_cut_save(tmpdir):
         assert qr(f) == b"GET"
         tctx.command(c.save, "@all", "request.content", f)
         assert qr(f) == b"content"
-        tctx.command(c.save, "@all", "request.content", "+" + f)
+        tctx.command(c.save, "@all", "request.content", f"+{f}")
         assert qr(f) == b"content\ncontent"
 
         v.add([tflow.tflow(resp=True)])

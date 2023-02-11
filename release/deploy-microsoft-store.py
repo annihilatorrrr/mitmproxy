@@ -95,11 +95,6 @@ def request(method: str, path: str, body: str = "") -> bytes:
     resp = conn.getresponse()
     data = resp.read()
     print(f"{resp.status} {resp.reason}")
-    # noinspection PyUnreachableCode
-    if False:
-        assert "CI" not in os.environ
-        # This contains sensitive data such as the fileUploadUrl, so don't print it in production.
-        print(data.decode(errors="ignore"))
     assert 200 <= resp.status < 300
     return data
 
@@ -125,7 +120,7 @@ for package in submission[packages]:
     package["fileStatus"] = "PendingDelete"
 submission[packages].append(
     {
-        "fileName": f"installer.msix",
+        "fileName": "installer.msix",
         "fileStatus": "PendingUpload",
         "minimumDirectXVersion": "None",
         "minimumSystemRam": "None",
@@ -141,7 +136,7 @@ conn.close()
 print(f"Zipping {msi_file}...")
 with tempfile.TemporaryFile() as zipfile:
     with ZipFile(zipfile, "w") as f:
-        f.write(msi_file, f"installer.msix")
+        f.write(msi_file, "installer.msix")
     zip_size = zipfile.tell()
     zipfile.seek(0)
 
@@ -150,7 +145,7 @@ with tempfile.TemporaryFile() as zipfile:
     upload = http.client.HTTPSConnection(host)
     upload.request(
         "PUT",
-        "/" + path,
+        f"/{path}",
         zipfile,
         {
             "x-ms-blob-type": "BlockBlob",

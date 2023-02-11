@@ -35,10 +35,7 @@ TransportProtocol = Literal["tcp", "udp"]
 # this version at least provides useful type checking messages.
 Address = tuple[str, int]
 
-if sys.version_info < (3, 10):  # pragma: no cover
-    kw_only = {}
-else:
-    kw_only = {"kw_only": True}
+kw_only = {} if sys.version_info < (3, 10) else {"kw_only": True}
 
 
 # noinspection PyDataclass
@@ -133,9 +130,7 @@ class Connection(serializable.SerializableDataclass, metaclass=ABCMeta):
         return self.timestamp_tls_setup is not None
 
     def __eq__(self, other):
-        if isinstance(other, Connection):
-            return self.id == other.id
-        return False
+        return self.id == other.id if isinstance(other, Connection) else False
 
     def __hash__(self):
         return hash(self.id)
@@ -231,17 +226,14 @@ class Client(Connection):
         return self.cipher
 
     @property
-    def clientcert(self) -> Optional[certs.Cert]:  # pragma: no cover
+    def clientcert(self) -> Optional[certs.Cert]:    # pragma: no cover
         """*Deprecated:* An outdated alias for Connection.certificate_list[0]."""
         warnings.warn(
             "Client.clientcert is deprecated, use Client.certificate_list instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        if self.certificate_list:
-            return self.certificate_list[0]
-        else:
-            return None
+        return self.certificate_list[0] if self.certificate_list else None
 
     @clientcert.setter
     def clientcert(self, val):  # pragma: no cover
@@ -250,10 +242,7 @@ class Client(Connection):
             DeprecationWarning,
             stacklevel=2,
         )
-        if val:
-            self.certificate_list = [val]
-        else:
-            self.certificate_list = []
+        self.certificate_list = [val] if val else []
 
 
 # noinspection PyDataclass
@@ -294,10 +283,7 @@ class Server(Connection):
             tls_state = ", tls"
         else:
             tls_state = ""
-        if self.sockname:
-            local_port = f", src_port={self.sockname[1]}"
-        else:
-            local_port = ""
+        local_port = f", src_port={self.sockname[1]}" if self.sockname else ""
         state = self.state.name
         assert state
         return f"Server({human.format_address(self.address)}, state={state.lower()}{tls_state}{local_port})"
@@ -325,17 +311,14 @@ class Server(Connection):
         return self.peername
 
     @property
-    def cert(self) -> Optional[certs.Cert]:  # pragma: no cover
+    def cert(self) -> Optional[certs.Cert]:    # pragma: no cover
         """*Deprecated:* An outdated alias for `Connection.certificate_list[0]`."""
         warnings.warn(
             "Server.cert is deprecated, use Server.certificate_list instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        if self.certificate_list:
-            return self.certificate_list[0]
-        else:
-            return None
+        return self.certificate_list[0] if self.certificate_list else None
 
     @cert.setter
     def cert(self, val):  # pragma: no cover
@@ -344,10 +327,7 @@ class Server(Connection):
             DeprecationWarning,
             stacklevel=2,
         )
-        if val:
-            self.certificate_list = [val]
-        else:
-            self.certificate_list = []
+        self.certificate_list = [val] if val else []
 
 
 __all__ = ["Connection", "Client", "Server", "ConnectionState"]

@@ -85,11 +85,7 @@ def format_pairs(items: Iterable[tuple[TTextType, TTextType]]) -> Iterator[TView
     max_key_len = min((max_key_len, KEY_MAX), default=0)
 
     for key, value in items:
-        if isinstance(key, bytes):
-            key += b":"
-        else:
-            key += ":"
-
+        key += b":" if isinstance(key, bytes) else ":"
         key = key.ljust(max_key_len + 2)
 
         yield [("header", key), ("text", value)]

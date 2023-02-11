@@ -72,9 +72,7 @@ class Binding:
 class Keymap:
     def __init__(self, master):
         self.executor = commandexecutor.CommandExecutor(master)
-        self.keys: dict[str, dict[str, Binding]] = {}
-        for c in Contexts:
-            self.keys[c] = {}
+        self.keys: dict[str, dict[str, Binding]] = {c: {} for c in Contexts}
         self.bindings = []
 
     def _check_contexts(self, contexts):
@@ -82,7 +80,7 @@ class Keymap:
             raise ValueError("Must specify at least one context.")
         for c in contexts:
             if c not in Contexts:
-                raise ValueError("Unsupported context: %s" % c)
+                raise ValueError(f"Unsupported context: {c}")
 
     def _on_change(self) -> None:
         signals.keybindings_change.send()
@@ -114,8 +112,7 @@ class Keymap:
         """
         self._check_contexts(contexts)
         for c in contexts:
-            b = self.get(c, key)
-            if b:
+            if b := self.get(c, key):
                 self.unbind(b)
                 b.contexts = [x for x in b.contexts if x != c]
                 if b.contexts:
@@ -137,16 +134,11 @@ class Keymap:
         self._on_change()
 
     def get(self, context: str, key: str) -> Optional[Binding]:
-        if context in self.keys:
-            return self.keys[context].get(key, None)
-        return None
+        return self.keys[context].get(key, None) if context in self.keys else None
 
     @cache
     def binding_for_help(self, help: str) -> Optional[Binding]:
-        for b in self.bindings:
-            if b.help == help:
-                return b
-        return None
+        return next((b for b in self.bindings if b.help == help), None)
 
     def list(self, context: str) -> Sequence[Binding]:
         b = [x for x in self.bindings if context in x.contexts or context == "all"]
@@ -160,8 +152,7 @@ class Keymap:
         """
         Returns the key if it has not been handled, or None.
         """
-        b = self.get(context, key) or self.get("global", key)
-        if b:
+        if b := self.get(context, key) or self.get("global", key):
             self.executor(b.command)
             return None
         return key
@@ -171,8 +162,7 @@ class Keymap:
         Like handle, but ignores global bindings. Returns the key if it has
         not been handled, or None.
         """
-        b = self.get(context, key)
-        if b:
+        if b := self.get(context, key):
             self.executor(b.command)
             return None
         return key
@@ -198,7 +188,7 @@ class KeymapConfig:
         try:
             self.load_path(self.master.keymap, path)  # type: ignore
         except (OSError, KeyBindingError) as e:
-            raise exceptions.CommandError("Could not load key bindings - %s" % e) from e
+            raise exceptions.CommandError(f"Could not load key bindings - {e}") from e
 
     def running(self):
         p = os.path.join(os.path.expanduser(ctx.options.confdir), self.defaultFile)
@@ -253,12 +243,11 @@ class KeymapConfig:
         for k in data:
             unknown = k.keys() - keyAttrs.keys()
             if unknown:
-                raise KeyBindingError("Unknown key attributes: %s" % unknown)
-            missing = requiredKeyAttrs - k.keys()
-            if missing:
-                raise KeyBindingError("Missing required key attributes: %s" % unknown)
+                raise KeyBindingError(f"Unknown key attributes: {unknown}")
+            if missing := requiredKeyAttrs - k.keys():
+                raise KeyBindingError(f"Missing required key attributes: {unknown}")
             for attr in k.keys():
                 if not keyAttrs[attr](k[attr]):
-                    raise KeyBindingError("Invalid type for %s" % attr)
+                    raise KeyBindingError(f"Invalid type for {attr}")
 
         return data

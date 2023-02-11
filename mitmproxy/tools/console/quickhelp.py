@@ -123,16 +123,13 @@ def make(
             "Clear": "Clear",
         }
     elif issubclass(widget, FocusEditor):
-        top_label = f"Edit:"
+        top_label = "Edit:"
         top_items |= {
             "Start edit": BasicKeyHelp("⏎"),
             "Stop edit": BasicKeyHelp("esc"),
             "Add row": "Add a row after cursor",
             "Delete row": "Delete this row",
         }
-    else:
-        pass
-
     bottom_label = "Proxy:"
     bottom_items: HelpItems = {
         "Help": "View help",

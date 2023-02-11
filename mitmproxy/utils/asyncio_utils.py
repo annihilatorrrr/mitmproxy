@@ -47,8 +47,7 @@ def set_current_task_debug_info(
 def task_repr(task: asyncio.Task) -> str:
     """Get a task representation with debug info."""
     name = task.get_name()
-    a: float = getattr(task, "created", 0)
-    if a:
+    if a := getattr(task, "created", 0):
         age = f" (age: {time.time() - a:.0f}s)"
     else:
         age = ""

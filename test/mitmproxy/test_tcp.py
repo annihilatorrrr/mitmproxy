@@ -15,7 +15,7 @@ class TestTCPFlow:
         del a["id"]
         del b["id"]
         assert a == b
-        assert not f == f2
+        assert f != f2
         assert f is not f2
 
         assert f.messages is not f2.messages
@@ -23,7 +23,7 @@ class TestTCPFlow:
         for m in f.messages:
             assert m.get_state()
             m2 = m.copy()
-            assert not m == m2
+            assert m != m2
             assert m is not m2
 
             a = m.get_state()

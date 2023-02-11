@@ -457,27 +457,25 @@ class SolarizedLight(LowLight):
     )
 
 
+
+
 class SolarizedDark(LowDark):
     high = dict(
         background=(sol_base2, sol_base03),
         title=(sol_blue, "default"),
         text=(sol_base1, "default"),
-        # Status bar & heading
         heading=(sol_base2, sol_base01),
-        heading_key=(sol_blue + ",bold", sol_base01),
+        heading_key=(f"{sol_blue},bold", sol_base01),
         heading_inactive=(sol_base1, sol_base02),
-        # Help
         key=(
             sol_blue,
             "default",
         ),
         head=(sol_base2, "default"),
-        # Options
         option_selected=(sol_base03, sol_base00),
         option_selected_key=(sol_blue, sol_base00),
         option_active=(sol_orange, "default"),
         option_active_selected=(sol_orange, sol_base00),
-        # List and Connections
         focus=(sol_base1, "default"),
         method_get=(sol_green, "default"),
         method_post=(sol_orange, "default"),
@@ -516,17 +514,13 @@ class SolarizedDark(LowDark):
             sol_green,
             "default",
         ),
-        # Hex view
         offset=(sol_cyan, "default"),
-        # JSON/msgpack view
         Token_Name_Tag=(sol_green, "default"),
         Token_Literal_String=(sol_cyan, "default"),
         Token_Literal_Number=(sol_blue, "default"),
         Token_Keyword_Constant=(sol_magenta, "default"),
-        # TCP flow details
         from_client=(sol_blue, "default"),
         to_client=(sol_red, "default"),
-        # Grid Editor
         focusfield=(sol_base0, sol_base02),
         focusfield_error=(sol_red, sol_base02),
         field_error=(sol_red, "default"),
@@ -538,6 +532,7 @@ class SolarizedDark(LowDark):
     gen_rgb_gradient(
         high, [(15, 0, 0), (15, 15, 0), (0, 15, 0), (0, 15, 15), (0, 0, 15)]
     )
+
 
 
 DEFAULT = "dark"

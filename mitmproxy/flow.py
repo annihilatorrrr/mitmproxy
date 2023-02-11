@@ -127,7 +127,7 @@ class Flow(serializable.Serializable):
         self._backup: Optional[Flow] = None
         self.marked: str = ""
         self.is_replay: Optional[str] = None
-        self.metadata: dict[str, Any] = dict()
+        self.metadata: dict[str, Any] = {}
         self.comment: str = ""
 
     __types: dict[str, type[Flow]] = {}
@@ -203,10 +203,7 @@ class Flow(serializable.Serializable):
         """
         `True` if this file has been modified by a user, `False` otherwise.
         """
-        if self._backup:
-            return self._backup != self.get_state()
-        else:
-            return False
+        return self._backup != self.get_state() if self._backup else False
 
     def backup(self, force=False):
         """

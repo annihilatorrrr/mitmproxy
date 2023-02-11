@@ -52,19 +52,22 @@ def parse_size(s: Optional[str]) -> Optional[int]:
 
 
 def pretty_duration(secs: Optional[float]) -> str:
+    if secs is None:
+        return ""
+
     formatters = [
         (100, "{:.0f}s"),
         (10, "{:2.1f}s"),
         (1, "{:1.2f}s"),
     ]
-    if secs is None:
-        return ""
-
-    for limit, formatter in formatters:
-        if secs >= limit:
-            return formatter.format(secs)
-    # less than 1 sec
-    return f"{secs * 1000:.0f}ms"
+    return next(
+        (
+            formatter.format(secs)
+            for limit, formatter in formatters
+            if secs >= limit
+        ),
+        f"{secs * 1000:.0f}ms",
+    )
 
 
 def format_timestamp(s):

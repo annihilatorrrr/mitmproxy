@@ -94,12 +94,12 @@ class _BoolType(_BaseType):
         return ["false", "true"]
 
     def parse(self, manager: "CommandManager", t: type, s: str) -> bool:
-        if s == "true":
-            return True
-        elif s == "false":
+        if s == "false":
             return False
+        elif s == "true":
+            return True
         else:
-            raise ValueError("Booleans are 'true' or 'false', got %s" % s)
+            raise ValueError(f"Booleans are 'true' or 'false', got {s}")
 
     def is_valid(self, manager: "CommandManager", typ: Any, val: Any) -> bool:
         return val in [True, False]
@@ -126,7 +126,7 @@ class _StrType(_BaseType):
 
     @staticmethod
     def _unescape(match: re.Match) -> str:
-        return codecs.decode(match.group(0), "unicode-escape")  # type: ignore
+        return codecs.decode(match[0], "unicode-escape")
 
     def completion(self, manager: "CommandManager", t: type, s: str) -> Sequence[str]:
         return []
@@ -195,7 +195,7 @@ class _PathType(_BaseType):
             files = glob.glob(os.path.join(path, "*"))
             prefix = start
         else:
-            files = glob.glob(path + "*")
+            files = glob.glob(f"{path}*")
             prefix = os.path.dirname(start)
         prefix = prefix or "./"
         for f in files:
@@ -224,7 +224,7 @@ class _CmdType(_BaseType):
 
     def parse(self, manager: "CommandManager", t: type, s: str) -> str:
         if s not in manager.commands:
-            raise ValueError("Unknown command: %s" % s)
+            raise ValueError(f"Unknown command: {s}")
         return s
 
     def is_valid(self, manager: "CommandManager", typ: Any, val: Any) -> bool:
@@ -256,7 +256,7 @@ class _StrSeqType(_BaseType):
         return [x.strip() for x in s.split(",")]
 
     def is_valid(self, manager: "CommandManager", typ: Any, val: Any) -> bool:
-        if isinstance(val, str) or isinstance(val, bytes):
+        if isinstance(val, (str, bytes)):
             return False
         try:
             for v in val:
@@ -370,7 +370,7 @@ class _FlowType(_BaseFlowType):
             raise ValueError(str(e)) from e
         if len(flows) != 1:
             raise ValueError(
-                "Command requires one flow, specification matched %s." % len(flows)
+                f"Command requires one flow, specification matched {len(flows)}."
             )
         return flows[0]
 
@@ -417,7 +417,7 @@ class _DataType(_BaseType):
         try:
             for row in val:
                 for cell in row:
-                    if not (isinstance(cell, str) or isinstance(cell, bytes)):
+                    if not (isinstance(cell, (str, bytes))):
                         return False
         except TypeError:
             return False

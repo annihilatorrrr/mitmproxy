@@ -25,18 +25,14 @@ from mitmproxy.log import ALERT
 @lru_cache
 def _path(path: str) -> str:
     """Extract the path from a path spec (which may have an extra "+" at the front)"""
-    if path.startswith("+"):
-        path = path[1:]
+    path = path.removeprefix("+")
     return os.path.expanduser(path)
 
 
 @lru_cache
 def _mode(path: str) -> Literal["ab", "wb"]:
     """Extract the writing mode (overwrite or append) from a path spec"""
-    if path.startswith("+"):
-        return "ab"
-    else:
-        return "wb"
+    return "ab" if path.startswith("+") else "wb"
 
 
 class Save:
@@ -86,7 +82,7 @@ class Save:
                 self.done()
 
     def maybe_rotate_to_new_file(self) -> None:
-        path = datetime.today().strftime(_path(ctx.options.save_stream_file))
+        path = datetime.now().strftime(_path(ctx.options.save_stream_file))
         if self.current_path == path:
             return
 

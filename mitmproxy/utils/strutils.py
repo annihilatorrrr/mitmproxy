@@ -133,18 +133,16 @@ def escaped_str_to_bytes(data: str) -> bytes:
 
 
 def is_mostly_bin(s: bytes) -> bool:
-    if not s or len(s) == 0:
-        return False
-
-    return sum(i < 9 or 13 < i < 32 or 126 < i for i in s[:100]) / len(s[:100]) > 0.3
+    return (
+        sum(i < 9 or 13 < i < 32 or i > 126 for i in s[:100]) / len(s[:100])
+        > 0.3
+        if s
+        else False
+    )
 
 
 def is_xml(s: bytes) -> bool:
-    for char in s:
-        if char in (9, 10, 32):  # is space?
-            continue
-        return char == 60  # is a "<"?
-    return False
+    return next((char == 60 for char in s if char not in (9, 10, 32)), False)
 
 
 def clean_hanging_newline(t):
@@ -154,9 +152,7 @@ def clean_hanging_newline(t):
     problem at the risk of removing a hanging newline in the rare cases
     where the user actually intends it.
     """
-    if t and t[-1] == "\n":
-        return t[:-1]
-    return t
+    return t[:-1] if t and t[-1] == "\n" else t
 
 
 def hexdump(s):
@@ -207,7 +203,7 @@ def split_special_areas(
 
     "".join(split_special_areas(x, ...)) == x always holds true.
     """
-    return re.split("({})".format("|".join(area_delimiter)), data, flags=re.MULTILINE)
+    return re.split(f'({"|".join(area_delimiter)})', data, flags=re.MULTILINE)
 
 
 def escape_special_areas(

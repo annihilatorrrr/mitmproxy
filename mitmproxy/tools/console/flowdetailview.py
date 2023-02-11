@@ -36,9 +36,7 @@ def flowdetails(state, flow: mitmproxy.flow.Flow):
         req = None
         resp = None
     metadata = flow.metadata
-    comment = flow.comment
-
-    if comment:
+    if comment := flow.comment:
         text.append(urwid.Text([("head", "Comment: "), ("text", comment)]))
 
     if metadata is not None and len(metadata) > 0:
@@ -120,9 +118,17 @@ def flowdetails(state, flow: mitmproxy.flow.Flow):
         parts.append(("Client conn. closed", maybe_timestamp(cc, "timestamp_end")))
 
     if sc is not None and sc.timestamp_start:
-        parts.append(("Server conn. initiated", maybe_timestamp(sc, "timestamp_start")))
-        parts.append(
-            ("Server conn. TCP handshake", maybe_timestamp(sc, "timestamp_tcp_setup"))
+        parts.extend(
+            (
+                (
+                    "Server conn. initiated",
+                    maybe_timestamp(sc, "timestamp_start"),
+                ),
+                (
+                    "Server conn. TCP handshake",
+                    maybe_timestamp(sc, "timestamp_tcp_setup"),
+                ),
+            )
         )
         if sc.tls_established:
             parts.append(
@@ -134,13 +140,25 @@ def flowdetails(state, flow: mitmproxy.flow.Flow):
         parts.append(("Server conn. closed", maybe_timestamp(sc, "timestamp_end")))
 
     if req is not None and req.timestamp_start:
-        parts.append(("First request byte", maybe_timestamp(req, "timestamp_start")))
-        parts.append(("Request complete", maybe_timestamp(req, "timestamp_end")))
-
+        parts.extend(
+            (
+                (
+                    "First request byte",
+                    maybe_timestamp(req, "timestamp_start"),
+                ),
+                ("Request complete", maybe_timestamp(req, "timestamp_end")),
+            )
+        )
     if resp is not None and resp.timestamp_start:
-        parts.append(("First response byte", maybe_timestamp(resp, "timestamp_start")))
-        parts.append(("Response complete", maybe_timestamp(resp, "timestamp_end")))
-
+        parts.extend(
+            (
+                (
+                    "First response byte",
+                    maybe_timestamp(resp, "timestamp_start"),
+                ),
+                ("Response complete", maybe_timestamp(resp, "timestamp_end")),
+            )
+        )
     if parts:
         # sort operations by timestamp
         parts = sorted(parts, key=lambda p: p[1])

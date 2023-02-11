@@ -137,9 +137,8 @@ def _process(attr_val: typing.Any, attr_type: type[V], attr_name: str, make: boo
             return None  # type: ignore
         else:
             return _process(attr_val, attr_type, attr_name, make)
-    else:
-        if attr_val is None:
-            raise ValueError(f"Attribute {attr_name} must not be None.")
+    elif attr_val is None:
+        raise ValueError(f"Attribute {attr_name} must not be None.")
 
     if make and hasattr(attr_type, "from_state"):
         return attr_type.from_state(attr_val)  # type: ignore
@@ -151,7 +150,7 @@ def _process(attr_val: typing.Any, attr_type: type[V], attr_name: str, make: boo
         return [_process(x, T, attr_name, make) for x in attr_val]  # type: ignore
     elif origin is tuple:
         # We don't have a good way to represent tuple[str,int] | tuple[str,int,int,int], so we do a dirty hack here.
-        if attr_name in ("peername", "sockname"):
+        if attr_name in {"peername", "sockname"}:
             return tuple(
                 _process(x, T, attr_name, make)
                 for x, T in zip(attr_val, [str, int, int, int])
@@ -181,10 +180,7 @@ def _process(attr_val: typing.Any, attr_type: type[V], attr_name: str, make: boo
             )
         return attr_type(attr_val)  # type: ignore
     elif isinstance(attr_type, type) and issubclass(attr_type, enum.Enum):
-        if make:
-            return attr_type(attr_val)  # type: ignore
-        else:
-            return attr_val.value
+        return attr_type(attr_val) if make else attr_val.value
     else:
         raise TypeError(f"Unexpected type for {attr_name}: {attr_type!r}")
 

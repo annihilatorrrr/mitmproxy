@@ -94,9 +94,7 @@ class CommandBuffer:
             if remaining:
                 if parts[-1].type != mitmproxy.types.Space:
                     ret.append(("text", " "))
-                for param in remaining:
-                    ret.append(("commander_hint", f"{param} "))
-
+                ret.extend(("commander_hint", f"{param} ") for param in remaining)
         return ret
 
     def left(self) -> None:
@@ -120,8 +118,7 @@ class CommandBuffer:
                 parsed = parts
             else:
                 return
-            ct = mitmproxy.types.CommandTypes.get(type_to_complete, None)
-            if ct:
+            if ct := mitmproxy.types.CommandTypes.get(type_to_complete, None):
                 self.completion = CompletionState(
                     completer=ListCompleter(
                         cycle_prefix,
@@ -156,7 +153,7 @@ class CommandBuffer:
         """
 
         # We don't want to insert a space before the command
-        if k == " " and self.text[0 : self.cursor].strip() == "":
+        if k == " " and self.text[: self.cursor].strip() == "":
             return
 
         self.text = self.text[: self.cursor] + k + self.text[self.cursor :]
@@ -178,9 +175,9 @@ class CommandEdit(urwid.WidgetWrap):
     def keypress(self, size, key) -> None:
         if key == "delete":
             self.cbuf.delete()
-        elif key == "ctrl a" or key == "home":
+        elif key in ["ctrl a", "home"]:
             self.cbuf.cursor = 0
-        elif key == "ctrl e" or key == "end":
+        elif key in ["ctrl e", "end"]:
             self.cbuf.cursor = len(self.cbuf.text)
         elif key == "meta b":
             self.cbuf.cursor = self.cbuf.text.rfind(" ", 0, self.cbuf.cursor)
@@ -197,7 +194,7 @@ class CommandEdit(urwid.WidgetWrap):
                 cursor_pos = 0
             else:
                 txt_after = self.cbuf.text[self.cbuf.cursor :]
-                txt_before = self.cbuf.text[0:pos]
+                txt_before = self.cbuf.text[:pos]
                 new_text = f"{txt_before} {txt_after}"
                 cursor_pos = prev_cursor - (prev_cursor - pos) + 1
             self.cbuf.set_text(new_text)
@@ -208,18 +205,18 @@ class CommandEdit(urwid.WidgetWrap):
                 self.active_filter = False
                 self.master.commands.call("commands.history.filter", "")
                 self.filter_str = ""
-        elif key == "left" or key == "ctrl b":
+        elif key in ["left", "ctrl b"]:
             self.cbuf.left()
-        elif key == "right" or key == "ctrl f":
+        elif key in ["right", "ctrl f"]:
             self.cbuf.right()
-        elif key == "up" or key == "ctrl p":
+        elif key in ["up", "ctrl p"]:
             if self.active_filter is False:
                 self.active_filter = True
                 self.filter_str = self.cbuf.text
                 self.master.commands.call("commands.history.filter", self.cbuf.text)
             cmd = self.master.commands.execute("commands.history.prev")
             self.cbuf = CommandBuffer(self.master, cmd)
-        elif key == "down" or key == "ctrl n":
+        elif key in ["down", "ctrl n"]:
             prev_cmd = self.cbuf.text
             cmd = self.master.commands.execute("commands.history.next")
 

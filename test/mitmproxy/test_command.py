@@ -16,7 +16,7 @@ class TAddon:
     @command.command("cmd1")
     def cmd1(self, foo: str) -> str:
         """cmd1 help"""
-        return "ret " + foo
+        return f"ret {foo}"
 
     @command.command("cmd2")
     def cmd2(self, foo: str) -> str:
@@ -621,7 +621,7 @@ class TDec:
     @command.command("cmd1")
     def cmd1(self, foo: str) -> str:
         """cmd1 help"""
-        return "ret " + foo
+        return f"ret {foo}"
 
     @command.command("cmd2")
     def cmd2(self, foo: str) -> str:

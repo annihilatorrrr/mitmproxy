@@ -85,11 +85,10 @@ def request(flow: http.HTTPFlow) -> None:
 
 def response(flow: http.HTTPFlow) -> None:
     """Remove a specific cookie from every response."""
-    set_cookies_str = flow.response.headers.get_all("set-cookie")
-    # NOTE: According to docs, for use with the "Set-Cookie" and "Cookie" headers, either use `Response.cookies` or see `Headers.get_all`.
-    set_cookies_str_modified: list[str] = []
+    if set_cookies_str := flow.response.headers.get_all("set-cookie"):
+        # NOTE: According to docs, for use with the "Set-Cookie" and "Cookie" headers, either use `Response.cookies` or see `Headers.get_all`.
+        set_cookies_str_modified: list[str] = []
 
-    if set_cookies_str:
         for cookie in set_cookies_str:
             resp_cookies = parse_cookies(cookie)
 

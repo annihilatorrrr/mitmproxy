@@ -32,9 +32,7 @@ REDIRECT_API_PORT = 8085
 
 def read(rfile: IO[bytes]) -> Any:
     x = rfile.readline().strip()
-    if not x:
-        return None
-    return json.loads(x)
+    return json.loads(x) if x else None
 
 
 def write(data, wfile: IO[bytes]) -> None:
@@ -91,7 +89,7 @@ class APIRequestHandler(socketserver.StreamRequestHandler):
 
     def handle(self) -> None:
         proxifier: TransparentProxy = self.server.proxifier
-        try:
+        with contextlib.suppress(EOFError, OSError):
             pid: int = read(self.rfile)
             if pid is None:
                 return
@@ -107,8 +105,6 @@ class APIRequestHandler(socketserver.StreamRequestHandler):
                     except KeyError:
                         server = None
                     write(server, self.wfile)
-        except (EOFError, OSError):
-            pass
 
 
 class APIServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
@@ -232,9 +228,7 @@ class TcpConnectionTable(collections.abc.Mapping):
             # no need to update size, that's already done.
             self._refresh_ipv4()
         else:
-            raise RuntimeError(
-                "[IPv4] Unknown GetExtendedTcpTable return code: %s" % ret
-            )
+            raise RuntimeError(f"[IPv4] Unknown GetExtendedTcpTable return code: {ret}")
 
     def _refresh_ipv6(self):
         ret = ctypes.windll.iphlpapi.GetExtendedTcpTable(  # type: ignore
@@ -255,9 +249,7 @@ class TcpConnectionTable(collections.abc.Mapping):
             # no need to update size, that's already done.
             self._refresh_ipv6()
         else:
-            raise RuntimeError(
-                "[IPv6] Unknown GetExtendedTcpTable return code: %s" % ret
-            )
+            raise RuntimeError(f"[IPv6] Unknown GetExtendedTcpTable return code: {ret}")
 
 
 class Redirect(threading.Thread):
@@ -462,8 +454,9 @@ class TransparentProxy:
         # TODO: Make sure that server can be killed cleanly. That's a bit difficult as we don't have access to
         # controller.should_exit when this is called.
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_unavailable = s.connect_ex((REDIRECT_API_HOST, REDIRECT_API_PORT))
-        if server_unavailable:
+        if server_unavailable := s.connect_ex(
+            (REDIRECT_API_HOST, REDIRECT_API_PORT)
+        ):
             proxifier = TransparentProxy()
             proxifier.start()
 
@@ -571,7 +564,7 @@ if __name__ == "__main__":
         """Redirect flows to mitmproxy."""
         proxy = TransparentProxy(**options)
         proxy.start()
-        print(f" * Redirection active.")
+        print(" * Redirection active.")
         print(f"   Filter: {proxy.filter}")
         try:
             while True:

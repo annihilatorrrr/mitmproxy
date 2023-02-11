@@ -125,8 +125,7 @@ class ConnectionHandler(metaclass=abc.ABCMeta):
 
     async def handle_client(self) -> None:
         asyncio_utils.set_current_task_debug_info(
-            name=f"client handler",
-            client=self.client.peername,
+            name="client handler", client=self.client.peername
         )
         watch = asyncio_utils.create_task(
             self.timeout_watchdog.watch(),
@@ -144,7 +143,7 @@ class ConnectionHandler(metaclass=abc.ABCMeta):
         else:
             handler = asyncio_utils.create_task(
                 self.handle_connection(self.client),
-                name=f"client connection handler",
+                name="client connection handler",
                 client=self.client.peername,
             )
             self.transports[self.client].handler = handler
@@ -177,10 +176,10 @@ class ConnectionHandler(metaclass=abc.ABCMeta):
 
     async def open_connection(self, command: commands.OpenConnection) -> None:
         if not command.connection.address:
-            self.log(f"Cannot open connection, no hostname given.")
+            self.log("Cannot open connection, no hostname given.")
             self.server_event(
                 events.OpenConnectionCompleted(
-                    command, f"Cannot open connection, no hostname given."
+                    command, "Cannot open connection, no hostname given."
                 )
             )
             return

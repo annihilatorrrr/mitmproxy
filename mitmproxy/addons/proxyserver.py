@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 class Servers:
     def __init__(self, manager: ServerManager):
         self.changed = signals.AsyncSignal(lambda: None)
-        self._instances: dict[mode_specs.ProxyMode, ServerInstance] = dict()
+        self._instances: dict[mode_specs.ProxyMode, ServerInstance] = {}
         self._lock = asyncio.Lock()
         self._manager = manager
 

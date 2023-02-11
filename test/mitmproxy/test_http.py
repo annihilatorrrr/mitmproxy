@@ -432,11 +432,11 @@ class TestRequestUtils:
         assert not request.multipart_form
 
         request.headers["Content-Type"] = "multipart/form-data"
-        assert list(request.multipart_form.items()) == []
+        assert not list(request.multipart_form.items())
 
         with mock.patch("mitmproxy.net.http.multipart.decode_multipart") as m:
             m.side_effect = ValueError
-            assert list(request.multipart_form.items()) == []
+            assert not list(request.multipart_form.items())
 
     def test_set_multipart_form(self):
         request = treq()
@@ -649,7 +649,7 @@ class TestHTTPFlow:
         del a["id"]
         del b["id"]
         assert a == b
-        assert not f == f2
+        assert f != f2
         assert f is not f2
         assert f.request.get_state() == f2.request.get_state()
         assert f.request is not f2.request
@@ -710,9 +710,9 @@ class TestHTTPFlow:
         f2 = f.copy()
         f2.id = f.id  # copy creates a different uuid
         assert f.get_state() == f2.get_state()
-        assert not f == f2
+        assert f != f2
         f2.error = flow.Error("e2")
-        assert not f == f2
+        assert f != f2
         f2.backup()
         f2.intercept()  # to change the state
         f.set_state(f2.get_state())

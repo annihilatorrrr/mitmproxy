@@ -253,7 +253,7 @@ async def start_server(
 ) -> UdpServer:
     """UDP variant of asyncio.start_server."""
 
-    if host == "":
+    if not host:
         # binding to an empty string does not work on Windows or Ubuntu.
         host = "0.0.0.0"
 

@@ -784,7 +784,7 @@ class QuicLayer(tunnel.TunnelLayer):
         super().__init__(context, tunnel_connection=conn, conn=conn)
         self.child_layer = layer.NextLayer(self.context, ask_on_start=True)
         self._time = time or ctx.master.event_loop.time
-        self._wakeup_commands: dict[commands.RequestWakeup, float] = dict()
+        self._wakeup_commands: dict[commands.RequestWakeup, float] = {}
         conn.tls = True
 
     def _handle_event(self, event: events.Event) -> layer.CommandGenerator[None]:
@@ -845,9 +845,7 @@ class QuicLayer(tunnel.TunnelLayer):
         else:
             yield QuicStartServerHook(tls_data)
         if not tls_data.settings:
-            yield commands.Log(
-                f"No QUIC context was provided, failing connection.", ERROR
-            )
+            yield commands.Log("No QUIC context was provided, failing connection.", ERROR)
             yield commands.CloseConnection(self.conn)
             return
 
@@ -879,8 +877,8 @@ class QuicLayer(tunnel.TunnelLayer):
 
         # request a new wakeup if all pending requests trigger at a later time
         timer = self.quic.get_timer()
-        if timer is not None and not any(
-            existing <= timer for existing in self._wakeup_commands.values()
+        if timer is not None and all(
+            existing > timer for existing in self._wakeup_commands.values()
         ):
             command = commands.RequestWakeup(timer - self._time())
             self._wakeup_commands[command] = timer
@@ -932,7 +930,7 @@ class QuicLayer(tunnel.TunnelLayer):
 
                 yield from self.tls_interact()
                 return True, None
-            elif isinstance(
+            elif not isinstance(
                 event,
                 (
                     quic_events.ConnectionIdIssued,
@@ -941,8 +939,6 @@ class QuicLayer(tunnel.TunnelLayer):
                     quic_events.ProtocolNegotiated,
                 ),
             ):
-                pass
-            else:
                 raise AssertionError(f"Unexpected event: {event!r}")
 
         # transmit buffered data and re-arm timer
@@ -998,7 +994,7 @@ class QuicLayer(tunnel.TunnelLayer):
                 yield from self.event_to_child(
                     QuicStreamReset(self.conn, event.stream_id, event.error_code)
                 )
-            elif isinstance(
+            elif not isinstance(
                 event,
                 (
                     quic_events.ConnectionIdIssued,
@@ -1007,8 +1003,6 @@ class QuicLayer(tunnel.TunnelLayer):
                     quic_events.ProtocolNegotiated,
                 ),
             ):
-                pass
-            else:
                 raise AssertionError(f"Unexpected event: {event!r}")
 
         # transmit buffered data and re-arm timer
@@ -1217,17 +1211,18 @@ class ClientQuicLayer(QuicLayer):
         # start the client QUIC connection
         yield from self.start_tls(header.destination_cid)
         # XXX copied from TLS, we assume that `CloseConnection` in `start_tls` takes effect immediately
-        if not self.conn.connected:
-            return False, "connection closed early"
-
-        # send the client hello to aioquic
-        return (yield from super().receive_handshake_data(data))
+        return (
+            (yield from super().receive_handshake_data(data))
+            if self.conn.connected
+            else (False, "connection closed early")
+        )
 
     def start_server_tls(self) -> layer.CommandGenerator[str | None]:
-        if not self.server_tls_available:
-            return f"No server QUIC available."
-        err = yield commands.OpenConnection(self.context.server)
-        return err
+        return (
+            (yield commands.OpenConnection(self.context.server))
+            if self.server_tls_available
+            else "No server QUIC available."
+        )
 
     def on_handshake_error(self, err: str) -> layer.CommandGenerator[None]:
         yield commands.Log(f"Client QUIC handshake failed. {err}", level=WARNING)

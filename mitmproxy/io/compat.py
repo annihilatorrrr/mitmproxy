@@ -88,7 +88,7 @@ def convert_018_019(data):
     if data["server_conn"]["via"]:
         data["server_conn"]["via"]["alpn_proto_negotiated"] = None
     data["mode"] = "regular"
-    data["metadata"] = dict()
+    data["metadata"] = {}
     data["version"] = (0, 19)
     return data
 
@@ -341,10 +341,7 @@ def convert_11_12(data):
 
 def convert_12_13(data):
     data["version"] = 13
-    if data["marked"]:
-        data["marked"] = ":default:"
-    else:
-        data["marked"] = ""
+    data["marked"] = ":default:" if data["marked"] else ""
     return data
 
 
@@ -511,10 +508,6 @@ def migrate_flow(
                 and flow_version > version.FLOW_FORMAT_VERSION
             )
             raise ValueError(
-                "{} cannot read files with flow format version {}{}.".format(
-                    version.MITMPROXY,
-                    flow_version,
-                    ", please update mitmproxy" if should_upgrade else "",
-                )
+                f'{version.MITMPROXY} cannot read files with flow format version {flow_version}{", please update mitmproxy" if should_upgrade else ""}.'
             )
     return flow_data

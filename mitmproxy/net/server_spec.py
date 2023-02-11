@@ -41,10 +41,7 @@ def parse(server_spec: str, default_scheme: str) -> ServerSpec:
     if not m:
         raise ValueError(f"Invalid server specification: {server_spec}")
 
-    if m.group("scheme"):
-        scheme = m.group("scheme")
-    else:
-        scheme = default_scheme
+    scheme = m.group("scheme") or default_scheme
     if scheme not in (
         "http",
         "https",
@@ -77,7 +74,7 @@ def parse(server_spec: str, default_scheme: str) -> ServerSpec:
                 "dns": 53,
             }[scheme]
         except KeyError:
-            raise ValueError(f"Port specification missing.")
+            raise ValueError("Port specification missing.")
     if not check.is_valid_port(port):
         raise ValueError(f"Invalid port: {port}")
 

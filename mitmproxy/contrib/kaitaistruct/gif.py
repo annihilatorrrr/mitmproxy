@@ -6,7 +6,9 @@ from enum import Enum
 
 
 if getattr(kaitaistruct, 'API_VERSION', (0, 9)) < (0, 9):
-    raise Exception("Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have %s" % (kaitaistruct.__version__))
+    raise Exception(
+        f"Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have {kaitaistruct.__version__}"
+    )
 
 class Gif(KaitaiStruct):
     """GIF (Graphics Interchange Format) is an image file format, developed
@@ -40,7 +42,7 @@ class Gif(KaitaiStruct):
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
         self._parent = _parent
-        self._root = _root if _root else self
+        self._root = _root or self
         self._read()
 
     def _read(self):
@@ -68,7 +70,7 @@ class Gif(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -80,7 +82,7 @@ class Gif(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -97,7 +99,7 @@ class Gif(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -128,7 +130,7 @@ class Gif(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -181,7 +183,7 @@ class Gif(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -201,7 +203,7 @@ class Gif(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -221,12 +223,12 @@ class Gif(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
             self.magic = self._io.read_bytes(3)
-            if not self.magic == b"\x47\x49\x46":
+            if self.magic != b"\x47\x49\x46":
                 raise kaitaistruct.ValidationNotEqualError(b"\x47\x49\x46", self.magic, self._io, u"/types/header/seq/0")
             self.version = (self._io.read_bytes(3)).decode(u"ASCII")
 
@@ -239,18 +241,18 @@ class Gif(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
             self.block_size = self._io.read_bytes(1)
-            if not self.block_size == b"\x04":
+            if self.block_size != b"\x04":
                 raise kaitaistruct.ValidationNotEqualError(b"\x04", self.block_size, self._io, u"/types/ext_graphic_control/seq/0")
             self.flags = self._io.read_u1()
             self.delay_time = self._io.read_u2le()
             self.transparent_idx = self._io.read_u1()
             self.terminator = self._io.read_bytes(1)
-            if not self.terminator == b"\x00":
+            if self.terminator != b"\x00":
                 raise kaitaistruct.ValidationNotEqualError(b"\x00", self.terminator, self._io, u"/types/ext_graphic_control/seq/4")
 
         @property
@@ -274,7 +276,7 @@ class Gif(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -286,12 +288,12 @@ class Gif(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
             self.len_bytes = self._io.read_u1()
-            if not self.len_bytes == 11:
+            if self.len_bytes != 11:
                 raise kaitaistruct.ValidationNotEqualError(11, self.len_bytes, self._io, u"/types/application_id/seq/0")
             self.application_identifier = (self._io.read_bytes(8)).decode(u"ASCII")
             self.application_auth_code = self._io.read_bytes(3)
@@ -301,7 +303,7 @@ class Gif(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -320,7 +322,7 @@ class Gif(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -338,7 +340,7 @@ class Gif(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
-            self._root = _root if _root else self
+            self._root = _root or self
             self._read()
 
         def _read(self):
@@ -346,12 +348,13 @@ class Gif(KaitaiStruct):
             _on = self.label
             if _on == Gif.ExtensionLabel.application:
                 self.body = Gif.ExtApplication(self._io, self, self._root)
-            elif _on == Gif.ExtensionLabel.comment:
+            elif (
+                _on == Gif.ExtensionLabel.comment
+                or _on != Gif.ExtensionLabel.graphic_control
+            ):
                 self.body = Gif.Subblocks(self._io, self, self._root)
-            elif _on == Gif.ExtensionLabel.graphic_control:
-                self.body = Gif.ExtGraphicControl(self._io, self, self._root)
             else:
-                self.body = Gif.Subblocks(self._io, self, self._root)
+                self.body = Gif.ExtGraphicControl(self._io, self, self._root)
 
 
 

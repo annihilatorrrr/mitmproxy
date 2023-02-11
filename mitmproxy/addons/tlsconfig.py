@@ -75,10 +75,7 @@ def alpn_select_callback(conn: SSL.Connection, options: list[bytes]) -> Any:
     server_alpn = app_data["server_alpn"]
     http2 = app_data["http2"]
     if client_alpn is not None:
-        if client_alpn in options:
-            return client_alpn
-        else:
-            return SSL.NO_OVERLAPPING_PROTOCOLS
+        return client_alpn if client_alpn in options else SSL.NO_OVERLAPPING_PROTOCOLS
     if server_alpn and server_alpn in options:
         return server_alpn
     if server_alpn == b"":
@@ -86,12 +83,10 @@ def alpn_select_callback(conn: SSL.Connection, options: list[bytes]) -> Any:
         # We need to mirror this on the client connection.
         return SSL.NO_OVERLAPPING_PROTOCOLS
     http_alpns = proxy_tls.HTTP_ALPNS if http2 else proxy_tls.HTTP1_ALPNS
-    # client sends in order of preference, so we are nice and respect that.
-    for alpn in options:
-        if alpn in http_alpns:
-            return alpn
-    else:
-        return SSL.NO_OVERLAPPING_PROTOCOLS
+    return next(
+        (alpn for alpn in options if alpn in http_alpns),
+        SSL.NO_OVERLAPPING_PROTOCOLS,
+    )
 
 
 class TlsConfig:
@@ -121,28 +116,28 @@ class TlsConfig:
             typespec=str,
             default=net_tls.DEFAULT_MIN_VERSION.name,
             choices=[x.name for x in net_tls.Version],
-            help=f"Set the minimum TLS version for client connections.",
+            help="Set the minimum TLS version for client connections.",
         )
         loader.add_option(
             name="tls_version_client_max",
             typespec=str,
             default=net_tls.DEFAULT_MAX_VERSION.name,
             choices=[x.name for x in net_tls.Version],
-            help=f"Set the maximum TLS version for client connections.",
+            help="Set the maximum TLS version for client connections.",
         )
         loader.add_option(
             name="tls_version_server_min",
             typespec=str,
             default=net_tls.DEFAULT_MIN_VERSION.name,
             choices=[x.name for x in net_tls.Version],
-            help=f"Set the minimum TLS version for server connections.",
+            help="Set the minimum TLS version for server connections.",
         )
         loader.add_option(
             name="tls_version_server_max",
             typespec=str,
             default=net_tls.DEFAULT_MAX_VERSION.name,
             choices=[x.name for x in net_tls.Version],
-            help=f"Set the maximum TLS version for server connections.",
+            help="Set the maximum TLS version for server connections.",
         )
 
     def tls_clienthello(self, tls_clienthello: tls.ClientHelloData):
@@ -235,15 +230,11 @@ class TlsConfig:
 
         if not server.alpn_offers:
             if client.alpn_offers:
-                if ctx.options.http2:
-                    # We would perfectly support HTTP/1 -> HTTP/2, but we want to keep things on the same protocol
-                    # version. There are some edge cases where we want to mirror the regular server's behavior
-                    # accurately, for example header capitalization.
-                    server.alpn_offers = tuple(client.alpn_offers)
-                else:
-                    server.alpn_offers = tuple(
-                        x for x in client.alpn_offers if x != b"h2"
-                    )
+                server.alpn_offers = (
+                    tuple(client.alpn_offers)
+                    if ctx.options.http2
+                    else tuple(x for x in client.alpn_offers if x != b"h2")
+                )
             else:
                 # We either have no client TLS or a client without ALPN.
                 # - If the client does use TLS but did not send an ALPN extension, we want to mirror that upstream.

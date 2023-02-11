@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 def headername(spec: str):
     if not (spec.startswith("header[") and spec.endswith("]")):
-        raise exceptions.CommandError("Invalid header spec: %s" % spec)
+        raise exceptions.CommandError(f"Invalid header spec: {spec}")
     return spec[len("header[") : -1].strip()
 
 
@@ -33,7 +33,7 @@ def extract(cut: str, f: flow.Flow) -> Union[str, bytes]:
     current: Any = f
     for i, spec in enumerate(path):
         if spec.startswith("_"):
-            raise exceptions.CommandError("Can't access internal attribute %s" % spec)
+            raise exceptions.CommandError(f"Can't access internal attribute {spec}")
 
         part = getattr(current, spec, None)
         if i == len(path) - 1:
@@ -42,9 +42,7 @@ def extract(cut: str, f: flow.Flow) -> Union[str, bytes]:
             if spec == "host" and is_addr(current):
                 return str(current[0])
             elif spec.startswith("header["):
-                if not current:
-                    return ""
-                return current.headers.get(headername(spec), "")
+                return current.headers.get(headername(spec), "") if current else ""
             elif isinstance(part, bytes):
                 return part
             elif isinstance(part, bool):
@@ -64,10 +62,7 @@ def extract(cut: str, f: flow.Flow) -> Union[str, bytes]:
 
 def extract_str(cut: str, f: flow.Flow) -> str:
     ret = extract(cut, f)
-    if isinstance(ret, bytes):
-        return repr(ret)
-    else:
-        return ret
+    return repr(ret) if isinstance(ret, bytes) else ret
 
 
 class Cut:
@@ -86,9 +81,9 @@ class Cut:
         or "false", "bytes" are preserved, and all other values are
         converted to strings.
         """
-        ret: list[list[Union[str, bytes]]] = []
-        for f in flows:
-            ret.append([extract(c, f) for c in cuts])
+        ret: list[list[Union[str, bytes]]] = [
+            [extract(c, f) for c in cuts] for f in flows
+        ]
         return ret  # type: ignore
 
     @command.command("cut.save")
@@ -159,7 +154,7 @@ class Cut:
             for f in flows:
                 vals = [extract_str(c, f) for c in cuts]
                 writer.writerow(vals)
-            logger.log(ALERT, "Clipped %s cuts as CSV." % len(cuts))
+            logger.log(ALERT, f"Clipped {len(cuts)} cuts as CSV.")
         try:
             pyperclip.copy(fp.getvalue())
         except pyperclip.PyperclipException as e:

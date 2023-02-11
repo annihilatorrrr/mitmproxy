@@ -77,14 +77,14 @@ def test_dns(tmp_path):
         tctx.configure(sa, save_stream_file=None)
         assert rd(p)[0].response
 
-        tctx.configure(sa, save_stream_file="+" + p)
+        tctx.configure(sa, save_stream_file=f"+{p}")
         f = tflow.tdnsflow(err=True)
         sa.dns_request(f)
         sa.dns_error(f)
         tctx.configure(sa, save_stream_file=None)
         assert rd(p)[1].error
 
-        tctx.configure(sa, save_stream_file="+" + p)
+        tctx.configure(sa, save_stream_file=f"+{p}")
         f = tflow.tdnsflow()
         sa.dns_request(f)
         tctx.configure(sa, save_stream_file=None)
@@ -121,7 +121,7 @@ def test_save_command(tmp_path):
         assert len(rd(p)) == 1
         sa.save([tflow.tflow(resp=True)], p)
         assert len(rd(p)) == 1
-        sa.save([tflow.tflow(resp=True)], "+" + p)
+        sa.save([tflow.tflow(resp=True)], f"+{p}")
         assert len(rd(p)) == 2
 
         with pytest.raises(exceptions.CommandError):
@@ -130,7 +130,7 @@ def test_save_command(tmp_path):
         v = view.View()
         tctx.master.addons.add(v)
         tctx.master.addons.add(sa)
-        tctx.master.commands.execute("save.file @shown %s" % p)
+        tctx.master.commands.execute(f"save.file @shown {p}")
 
 
 def test_simple(tmp_path):
@@ -146,14 +146,14 @@ def test_simple(tmp_path):
         tctx.configure(sa, save_stream_file=None)
         assert rd(p)[0].response
 
-        tctx.configure(sa, save_stream_file="+" + p)
+        tctx.configure(sa, save_stream_file=f"+{p}")
         f = tflow.tflow(err=True)
         sa.request(f)
         sa.error(f)
         tctx.configure(sa, save_stream_file=None)
         assert rd(p)[1].error
 
-        tctx.configure(sa, save_stream_file="+" + p)
+        tctx.configure(sa, save_stream_file=f"+{p}")
         f = tflow.tflow()
         sa.request(f)
         tctx.configure(sa, save_stream_file=None)

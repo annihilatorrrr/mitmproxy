@@ -217,10 +217,10 @@ def test_rollback():
     assert o.one is None
     with pytest.raises(exceptions.OptionsError):
         o.bool = True
-    assert o.bool is False
+    assert not o.bool
     assert isinstance(recerr[0]["exc"], exceptions.OptionsError)
     assert o.one is None
-    assert o.bool is False
+    assert not o.bool
     assert len(rec) == 4
     assert rec[0].one == 10
     assert rec[1].one is None
@@ -263,7 +263,7 @@ def test_serialize():
     o2 = TD2()
     optmanager.load(o2, data)
     assert o2 == o
-    assert not o == 42
+    assert o != 42
 
     t = """
         unknown: foo

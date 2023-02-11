@@ -58,8 +58,7 @@ def handshake_record_contents(data: bytes) -> Iterator[bytes]:
 
         if len(data) < offset + record_size:
             return
-        record_body = data[offset : offset + record_size]
-        yield record_body
+        yield data[offset : offset + record_size]
         offset += record_size
 
 
@@ -90,9 +89,7 @@ def parse_client_hello(data: bytes) -> Optional[ClientHello]:
     Raises:
         - A ValueError, if the passed ClientHello is invalid
     """
-    # Check if ClientHello is complete
-    client_hello = get_client_hello(data)
-    if client_hello:
+    if client_hello := get_client_hello(data):
         try:
             return ClientHello(client_hello[4:])
         except EOFError as e:
@@ -131,8 +128,7 @@ def dtls_handshake_record_contents(data: bytes) -> Iterator[bytes]:
 
         if len(data) < offset + record_size:
             return
-        record_body = data[offset : offset + record_size]
-        yield record_body
+        yield data[offset : offset + record_size]
         offset += record_size
 
 
@@ -166,9 +162,7 @@ def dtls_parse_client_hello(data: bytes) -> Optional[ClientHello]:
     Raises:
         - A ValueError, if the passed ClientHello is invalid
     """
-    # Check if ClientHello is complete
-    client_hello = get_dtls_client_hello(data)
-    if client_hello:
+    if client_hello := get_dtls_client_hello(data):
         try:
             return ClientHello(client_hello[12:], dtls=True)
         except EOFError as e:
@@ -350,15 +344,12 @@ class TLSLayer(tunnel.TunnelLayer):
                 ]
                 and data[:4].isascii()
             ):
-                err = f"The remote server does not speak TLS."
+                err = "The remote server does not speak TLS."
             elif last_err in [
                 ("SSL routines", "ssl3_read_bytes", "tlsv1 alert protocol version"),
                 ("SSL routines", "", "tlsv1 alert protocol version"),  # OpenSSL 3+
             ]:
-                err = (
-                    f"The remote server and mitmproxy cannot agree on a TLS version to use. "
-                    f"You may need to adjust mitmproxy's tls_version_server_min option."
-                )
+                err = "The remote server and mitmproxy cannot agree on a TLS version to use. You may need to adjust mitmproxy's tls_version_server_min option."
             else:
                 err = f"OpenSSL {e!r}"
             return False, err
@@ -371,8 +362,7 @@ class TLSLayer(tunnel.TunnelLayer):
             # side, the peer's certificate must be obtained separately using SSL_get_peer_certificate(3).
             all_certs = self.tls.get_peer_cert_chain() or []
             if self.conn == self.context.client:
-                cert = self.tls.get_peer_certificate()
-                if cert:
+                if cert := self.tls.get_peer_certificate():
                     all_certs.insert(0, cert)
 
             self.conn.timestamp_tls_setup = time.time()
@@ -439,9 +429,7 @@ class TLSLayer(tunnel.TunnelLayer):
             yield from self.event_to_child(events.ConnectionClosed(self.conn))
 
     def receive_close(self) -> layer.CommandGenerator[None]:
-        if self.tls.get_shutdown() & SSL.RECEIVED_SHUTDOWN:
-            pass  # We have already dispatched a ConnectionClosed to the child layer.
-        else:
+        if not self.tls.get_shutdown() & SSL.RECEIVED_SHUTDOWN:
             yield from super().receive_close()
 
     def send_data(self, data: bytes) -> layer.CommandGenerator[None]:
@@ -626,16 +614,14 @@ class ClientTLSLayer(TLSLayer):
         We often need information from the upstream connection to establish TLS with the client.
         For example, we need to check if the client does ALPN or not.
         """
-        if not self.server_tls_available:
-            return f"No server {self.proto_name} available."
-        err = yield commands.OpenConnection(self.context.server)
-        return err
+        return (
+            (yield commands.OpenConnection(self.context.server))
+            if self.server_tls_available
+            else f"No server {self.proto_name} available."
+        )
 
     def on_handshake_error(self, err: str) -> layer.CommandGenerator[None]:
-        if self.conn.sni:
-            dest = self.conn.sni
-        else:
-            dest = human.format_address(self.context.server.address)
+        dest = self.conn.sni or human.format_address(self.context.server.address)
         level: int = WARNING
         if err.startswith("Cannot parse ClientHello"):
             pass
@@ -644,10 +630,7 @@ class ClientTLSLayer(TLSLayer):
             in err
             or "('SSL routines', '', 'unsupported protocol')" in err  # OpenSSL 3+
         ):
-            err = (
-                f"Client and mitmproxy cannot agree on a TLS version to use. "
-                f"You may need to adjust mitmproxy's tls_version_client_min option."
-            )
+            err = "Client and mitmproxy cannot agree on a TLS version to use. You may need to adjust mitmproxy's tls_version_client_min option."
         elif (
             "unknown ca" in err
             or "bad certificate" in err
@@ -662,9 +645,7 @@ class ClientTLSLayer(TLSLayer):
                 f"this may indicate that the client does not trust the proxy's certificate."
             )
             level = INFO
-        elif err == "connection closed early":
-            pass
-        else:
+        elif err != "connection closed early":
             err = f"The client may not trust the proxy's certificate for {dest} ({err})"
         if err != "connection closed early":
             yield commands.Log(f"Client TLS handshake failed. {err}", level=level)

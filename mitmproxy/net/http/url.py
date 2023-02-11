@@ -39,9 +39,7 @@ def parse(url):
     # Size of Ascii character after encoding is 1 byte which is same as its size
     # But non-Ascii character's size after encoding will be more than its size
     def ascii_check(l):
-        if len(l) == len(str(l).encode()):
-            return True
-        return False
+        return len(l) == len(str(l).encode())
 
     if isinstance(url, bytes):
         url = url.decode()
@@ -55,10 +53,9 @@ def parse(url):
     if not parsed.hostname:
         raise ValueError("No hostname given")
 
-    else:
-        host = parsed.hostname.encode("idna")
-        if isinstance(parsed, urllib.parse.ParseResult):
-            parsed = parsed.encode("ascii")
+    host = parsed.hostname.encode("idna")
+    if isinstance(parsed, urllib.parse.ParseResult):
+        parsed = parsed.encode("ascii")
 
     port = parsed.port
     if not port:
@@ -140,11 +137,10 @@ def hostport(scheme: AnyStr, host: AnyStr, port: int) -> AnyStr:
     """
     if default_port(scheme) == port:
         return host
+    if isinstance(host, bytes):
+        return b"%s:%d" % (host, port)
     else:
-        if isinstance(host, bytes):
-            return b"%s:%d" % (host, port)
-        else:
-            return "%s:%d" % (host, port)
+        return "%s:%d" % (host, port)
 
 
 def default_port(scheme: AnyStr) -> Optional[int]:
@@ -179,14 +175,13 @@ def parse_authority(authority: AnyStr, check: bool) -> tuple[str, Optional[int]]
         if not is_valid_host(host):
             raise ValueError
 
-        if m.group("port"):
-            port = int(m.group("port"))
-            if not is_valid_port(port):
-                raise ValueError
-            return host, port
-        else:
+        if not m.group("port"):
             return host, None
 
+        port = int(m.group("port"))
+        if not is_valid_port(port):
+            raise ValueError
+        return host, port
     except ValueError:
         if check:
             raise

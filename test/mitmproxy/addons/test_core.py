@@ -144,7 +144,7 @@ def test_options(tmpdir):
             sa.options_save("/")
 
         sa.options_reset()
-        assert tctx.options.listen_host == ""
+        assert not tctx.options.listen_host
         sa.options_load(p)
         assert tctx.options.listen_host == "foo"
 

@@ -106,7 +106,7 @@ def test_ignore_content():
         r2.request.content = b"foo"
         assert s._hash(r) == s._hash(r2)
         r2.request.content = b"bar"
-        assert not s._hash(r) == s._hash(r2)
+        assert s._hash(r) != s._hash(r2)
 
         tctx.configure(s, server_replay_ignore_content=True)
         r = tflow.tflow(resp=True)
@@ -163,7 +163,7 @@ def test_ignore_payload_params_other_content_type():
         assert s._hash(r) == s._hash(r2)
         # distint content (note only x-www-form-urlencoded payload is analysed)
         r2.request.content = b'{"param1":"2"}'
-        assert not s._hash(r) == s._hash(r2)
+        assert s._hash(r) != s._hash(r2)
 
 
 def test_hash():
@@ -194,7 +194,7 @@ def test_headers():
         r = tflow.tflow(resp=True)
         r.request.headers["foo"] = "bar"
         r2 = tflow.tflow(resp=True)
-        assert not s._hash(r) == s._hash(r2)
+        assert s._hash(r) != s._hash(r2)
         r2.request.headers["foo"] = "bar"
         assert s._hash(r) == s._hash(r2)
         r2.request.headers["oink"] = "bar"
@@ -265,7 +265,7 @@ def test_ignore_params():
         r2.request.path = "/test?param2=1"
         assert s._hash(r) == s._hash(r2)
         r2.request.path = "/test?param3=2"
-        assert not s._hash(r) == s._hash(r2)
+        assert s._hash(r) != s._hash(r2)
 
 
 def thash(r, r2, setter):
@@ -290,11 +290,11 @@ def thash(r, r2, setter):
         assert s._hash(r) == s._hash(r2)
         # not ignorable parameter changed
         setter(r2, paramx="y", param1="1")
-        assert not s._hash(r) == s._hash(r2)
+        assert s._hash(r) != s._hash(r2)
         # not ignorable parameter missing
         setter(r2, param1="1")
         r2.request.content = b"param1=1"
-        assert not s._hash(r) == s._hash(r2)
+        assert s._hash(r) != s._hash(r2)
 
 
 def test_ignore_payload_params():
@@ -318,7 +318,7 @@ def test_ignore_payload_params():
             )
         c = b + b.join(parts) + b
         r.request.content = c.encode()
-        r.request.headers["content-type"] = "multipart/form-data; boundary=" + boundary
+        r.request.headers["content-type"] = f"multipart/form-data; boundary={boundary}"
 
     r = tflow.tflow(resp=True)
     r2 = tflow.tflow(resp=True)

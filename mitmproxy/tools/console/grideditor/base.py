@@ -144,8 +144,7 @@ class GridWalker(urwid.ListWalker):
 
     def set_current_value(self, val) -> None:
         errors = self.lst[self.focus][1]
-        emsg = self.editor.is_error(self.focus_col, val)
-        if emsg:
+        if emsg := self.editor.is_error(self.focus_col, val):
             signals.status_message.send(message=emsg)
             errors.add(self.focus_col)
         else:
@@ -234,7 +233,7 @@ class GridWalker(urwid.ListWalker):
         return GridRow(None, False, self.editor, self.lst[pos + 1]), pos + 1
 
     def get_prev(self, pos):
-        if pos - 1 < 0:
+        if pos < 1:
             return None, None
         return GridRow(None, False, self.editor, self.lst[pos - 1]), pos - 1
 
@@ -297,10 +296,7 @@ class BaseGridEditor(urwid.WidgetWrap):
         self.show_empty_msg()
 
     def layout_popping(self):
-        res = []
-        for i in self.walker.lst:
-            if not i[1] and any([x for x in i[0]]):
-                res.append(i[0])
+        res = [i[0] for i in self.walker.lst if not i[1] and any(list(i[0]))]
         self.callback(self.data_out(res), *self.cb_args, **self.cb_kwargs)
 
     def show_empty_msg(self):
@@ -421,8 +417,7 @@ class FocusEditor(urwid.WidgetWrap, layoutwidget.LayoutWidget):
         self.master = master
 
     def call(self, v, name, *args, **kwargs):
-        f = getattr(v, name, None)
-        if f:
+        if f := getattr(v, name, None):
             f(*args, **kwargs)
 
     def get_data(self, flow):

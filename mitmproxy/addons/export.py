@@ -70,9 +70,7 @@ def curl_command(f: flow.Flow) -> str:
         and request.pretty_host != server_addr
     ):
         resolve = f"{request.pretty_host}:{request.port}:[{server_addr}]"
-        args.append("--resolve")
-        args.append(resolve)
-
+        args.extend(("--resolve", resolve))
     for k, v in request.headers.items(multi=True):
         if k.lower() == "accept-encoding":
             args.append("--compressed")
@@ -99,11 +97,10 @@ def httpie_command(f: flow.Flow) -> str:
     url = request.pretty_url
 
     args = ["http", request.method, url]
-    for k, v in request.headers.items(multi=True):
-        args.append(f"{k}: {v}")
+    args.extend(f"{k}: {v}" for k, v in request.headers.items(multi=True))
     cmd = " ".join(shlex.quote(arg) for arg in args)
     if request.content:
-        cmd += " <<< " + shlex.quote(request_content_for_console(request))
+        cmd += f" <<< {shlex.quote(request_content_for_console(request))}"
     return cmd
 
 
@@ -179,7 +176,7 @@ class Export:
         Export a flow to path.
         """
         if format not in formats:
-            raise exceptions.CommandError("No such export format: %s" % format)
+            raise exceptions.CommandError(f"No such export format: {format}")
         func: Any = formats[format]
         v = func(flow)
         try:
@@ -207,7 +204,7 @@ class Export:
         Export a flow and return the result.
         """
         if format not in formats:
-            raise exceptions.CommandError("No such export format: %s" % format)
+            raise exceptions.CommandError(f"No such export format: {format}")
         func = formats[format]
 
         return strutils.always_str(func(f), "utf8", "backslashreplace")

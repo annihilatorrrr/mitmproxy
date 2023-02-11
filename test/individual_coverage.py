@@ -42,22 +42,21 @@ def run_tests(src, test, fail):
             e = 42
         else:
             print(".")
+    elif fail:
+        print("Ignoring allowed fail:", src)
+        e = 0
     else:
-        if fail:
-            print("Ignoring allowed fail:", src)
-            e = 0
+        cov = [
+            l
+            for l in stdout.getvalue().split("\n")
+            if (src in l) or ("was never imported" in l)
+        ]
+        if len(cov) == 1:
+            print("FAIL:", cov[0])
         else:
-            cov = [
-                l
-                for l in stdout.getvalue().split("\n")
-                if (src in l) or ("was never imported" in l)
-            ]
-            if len(cov) == 1:
-                print("FAIL:", cov[0])
-            else:
-                print("FAIL:", src, test, stdout.getvalue(), stdout.getvalue())
-                print(stderr.getvalue())
-                print(stdout.getvalue())
+            print("FAIL:", src, test, stdout.getvalue(), stdout.getvalue())
+            print(stderr.getvalue())
+            print(stdout.getvalue())
 
     sys.exit(e)
 
@@ -85,7 +84,9 @@ def main():
     src_files = glob.glob("mitmproxy/**/*.py", recursive=True)
     src_files = [f for f in src_files if os.path.basename(f) != "__init__.py"]
     src_files = [
-        f for f in src_files if not any(os.path.normpath(p) in f for p in excluded)
+        f
+        for f in src_files
+        if all(os.path.normpath(p) not in f for p in excluded)
     ]
     if len(sys.argv) > 1:
         src_files = [f for f in src_files if sys.argv[1] in str(f)]
@@ -93,7 +94,7 @@ def main():
     ps = []
     for src in sorted(src_files):
         test = os.path.join(
-            "test", os.path.dirname(src), "test_" + os.path.basename(src)
+            "test", os.path.dirname(src), f"test_{os.path.basename(src)}"
         )
         if os.path.isfile(test):
             ps.append((src, test, src in no_individual_cov))
